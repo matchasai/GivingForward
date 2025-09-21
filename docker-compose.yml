@@ -1,0 +1,85 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: fundapp-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: fundapp
+      MYSQL_USER: fundapp
+      MYSQL_PASSWORD: password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password
+
+  auth-service:
+    build:
+      context: ./microservices/auth-service
+    ports:
+      - "8081:8081"
+    environment:
+      DB_USERNAME: root
+      DB_PASSWORD: password
+      DB_HOST: mysql
+      DB_PORT: 3306
+    depends_on:
+      - mysql
+
+  campaign-service:
+    build:
+      context: ./microservices/campaign-service
+    ports:
+      - "8082:8082"
+    environment:
+      DB_USERNAME: root
+      DB_PASSWORD: password
+      DB_HOST: mysql
+      DB_PORT: 3306
+    depends_on:
+      - mysql
+
+  donation-service:
+    build:
+      context: ./microservices/donation-service
+    ports:
+      - "8083:8083"
+    environment:
+      DB_USERNAME: root
+      DB_PASSWORD: password
+      DB_HOST: mysql
+      DB_PORT: 3306
+    depends_on:
+      - mysql
+
+  admin-service:
+    build:
+      context: ./microservices/admin-service
+    ports:
+      - "8084:8084"
+    environment:
+      DB_USERNAME: root
+      DB_PASSWORD: password
+      DB_HOST: mysql
+      DB_PORT: 3306
+    depends_on:
+      - mysql
+
+  upload-service:
+    build:
+      context: ./microservices/upload-service
+    ports:
+      - "8085:8085"
+    environment:
+      DB_USERNAME: root
+      DB_PASSWORD: password
+      DB_HOST: mysql
+      DB_PORT: 3306
+    depends_on:
+      - mysql
+
+volumes:
+  mysql_data: 

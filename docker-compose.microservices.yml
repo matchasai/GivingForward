@@ -1,0 +1,164 @@
+version: '3.8'
+
+services:
+  # Database
+  mysql:
+    image: mysql:8.0
+    container_name: givingforward-db
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - givingforward-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  # Authentication Service
+  auth-service:
+    build: ./microservices/auth-service
+    container_name: auth-service
+    environment:
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_NAME=${DB_NAME}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRATION=${JWT_EXPIRATION}
+      - MAIL_HOST=${MAIL_HOST}
+      - MAIL_PORT=${MAIL_PORT}
+      - MAIL_USERNAME=${MAIL_USERNAME}
+      - MAIL_PASSWORD=${MAIL_PASSWORD}
+      - SERVER_PORT=8081
+    ports:
+      - "8081:8081"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - givingforward-network
+    restart: unless-stopped
+
+  # Campaign Service
+  campaign-service:
+    build: ./microservices/campaign-service
+    container_name: campaign-service
+    environment:
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_NAME=${DB_NAME}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+      - SERVER_PORT=8082
+      - AUTH_SERVICE_URL=http://auth-service:8081
+    ports:
+      - "8082:8082"
+    depends_on:
+      - mysql
+      - auth-service
+    networks:
+      - givingforward-network
+    restart: unless-stopped
+
+  # Donation Service
+  donation-service:
+    build: ./microservices/donation-service
+    container_name: donation-service
+    environment:
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_NAME=${DB_NAME}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+      - SERVER_PORT=8083
+      - AUTH_SERVICE_URL=http://auth-service:8081
+      - CAMPAIGN_SERVICE_URL=http://campaign-service:8082
+    ports:
+      - "8083:8083"
+    depends_on:
+      - mysql
+      - auth-service
+      - campaign-service
+    networks:
+      - givingforward-network
+    restart: unless-stopped
+
+  # Admin Service
+  admin-service:
+    build: ./microservices/admin-service
+    container_name: admin-service
+    environment:
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_NAME=${DB_NAME}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+      - SERVER_PORT=8084
+      - AUTH_SERVICE_URL=http://auth-service:8081
+      - CAMPAIGN_SERVICE_URL=http://campaign-service:8082
+      - DONATION_SERVICE_URL=http://donation-service:8083
+    ports:
+      - "8084:8084"
+    depends_on:
+      - mysql
+      - auth-service
+      - campaign-service
+      - donation-service
+    networks:
+      - givingforward-network
+    restart: unless-stopped
+
+  # Upload Service
+  upload-service:
+    build: ./microservices/upload-service
+    container_name: upload-service
+    environment:
+      - JWT_SECRET=${JWT_SECRET}
+      - SERVER_PORT=8085
+      - AUTH_SERVICE_URL=http://auth-service:8081
+      - UPLOAD_PATH=/app/uploads
+    ports:
+      - "8085:8085"
+    volumes:
+      - upload_data:/app/uploads
+    depends_on:
+      - auth-service
+    networks:
+      - givingforward-network
+    restart: unless-stopped
+
+  # API Gateway (Nginx)
+  api-gateway:
+    image: nginx:alpine
+    container_name: api-gateway
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - auth-service
+      - campaign-service
+      - donation-service
+      - admin-service
+      - upload-service
+    networks:
+      - givingforward-network
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
+  upload_data:
+
+networks:
+  givingforward-network:
+    driver: bridge
