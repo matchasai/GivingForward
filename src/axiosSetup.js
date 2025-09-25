@@ -62,7 +62,14 @@ axios.interceptors.response.use(
       isRefreshing = true;
       try {
         const refreshToken = localStorage.getItem('refreshToken');
-        if (!refreshToken) throw error;
+        if (!refreshToken) {
+          // No refresh token available -> force logout
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          localStorage.removeItem('refreshToken');
+          try { window.location.assign('/login'); } catch (_) {}
+          throw error;
+        }
         const res = await axios.post('/api/auth/refresh', { refreshToken });
         const newToken = res.data.token;
         const newRefreshToken = res.data.refreshToken;
@@ -76,6 +83,7 @@ axios.interceptors.response.use(
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         localStorage.removeItem('refreshToken');
+        try { window.location.assign('/login'); } catch (_) {}
         return Promise.reject(err);
       } finally {
         isRefreshing = false;
