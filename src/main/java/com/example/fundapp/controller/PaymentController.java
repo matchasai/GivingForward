@@ -110,11 +110,7 @@ public class PaymentController {
     @PostMapping("/create-order")
     public ResponseEntity<?> createOrder(@RequestBody CreateOrderRequest body) throws Exception {
         // Safe diagnostic: do NOT print key values
-        if (log.isDebugEnabled()) {
-            log.debug("Razorpay config present? keyId={}, keySecret={}",
-                    (razorpayKeyId != null && !razorpayKeyId.isBlank()),
-                    (razorpayKeySecret != null && !razorpayKeySecret.isBlank()));
-        }
+        // avoid logging secrets; rely on proper error messages below if missing
         if (razorpayKeyId == null || razorpayKeyId.isBlank() || razorpayKeySecret == null
                 || razorpayKeySecret.isBlank()) {
             return ResponseEntity.status(500).body(Map.of(
@@ -202,21 +198,18 @@ public class PaymentController {
         User authedUser = null;
         try {
             if (authorization != null && authorization.startsWith("Bearer ")) {
-                if (log.isDebugEnabled())
-                    log.debug("[verify] Authorization header present");
+                // auth header present
                 String jwt = authorization.substring(7).trim();
                 String username = tokenProvider.getUsernameFromJWT(jwt);
                 UserDetails userDetails = customUserDetailsService.loadUserByUsername(username);
                 authedUser = userRepository.findByEmail(username).orElse(null);
-                if (log.isDebugEnabled())
-                    log.debug("[verify] Token valid for user={}, entityFound={} ", username, (authedUser != null));
+                // token valid; user resolved if present
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                         userDetails, null, userDetails.getAuthorities());
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
         } catch (Exception ignored) {
-            if (log.isDebugEnabled())
-                log.debug("[verify] Authorization processing error: {}", ignored.getMessage());
+            // ignore auth errors; proceed as anonymous
         }
 
         String payload = body.razorpayOrderId + "|" + body.razorpayPaymentId;
@@ -235,8 +228,7 @@ public class PaymentController {
             // Persist for the authenticated user explicitly
             donation = donationService.makeDonationForUser(authedUser, donationRequest);
         } else {
-            if (log.isDebugEnabled())
-                log.debug("[verify] Proceeding as anonymous donation");
+            // anonymous donation
             // Anonymous donation
             donation = donationService.makeDonation(donationRequest);
         }

@@ -4,8 +4,6 @@ import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
@@ -20,8 +18,6 @@ import io.jsonwebtoken.security.Keys;
 
 @Component
 public class JwtTokenProvider {
-
-    private static final Logger log = LoggerFactory.getLogger(JwtTokenProvider.class);
 
     @Value("${jwt.secret}")
     private String jwtSecret;
@@ -83,11 +79,7 @@ public class JwtTokenProvider {
                     .parseClaimsJws(authToken);
             return true;
         } catch (JwtException | IllegalArgumentException e) {
-            // Add diagnostics to understand invalid token causes (expired, malformed, bad
-            // signature, etc.)
-            if (log.isDebugEnabled()) {
-                log.debug("JWT validation failed: {} - {}", e.getClass().getSimpleName(), e.getMessage());
-            }
+            // silent fail for invalid tokens (client handles refresh/reauth)
             return false;
         }
     }

@@ -53,8 +53,6 @@ public class CampaignService {
         try {
             // Get the current authenticated user
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            if (log.isDebugEnabled())
-                log.debug("Authentication object present? {}", authentication != null);
 
             User currentUser = null;
 
@@ -62,14 +60,12 @@ public class CampaignService {
                     !authentication.getName().equals("anonymousUser")) {
 
                 String currentUserEmail = authentication.getName();
-                if (log.isDebugEnabled())
-                    log.debug("Creating campaign for authenticated user: {}", currentUserEmail);
+                // minimal diagnostic retained via warnings below when needed
 
                 Optional<User> userOptional = userRepository.findByEmail(currentUserEmail);
                 if (userOptional.isPresent()) {
                     currentUser = userOptional.get();
-                    if (log.isDebugEnabled())
-                        log.debug("Found authenticated user: {}", currentUser.getName());
+                    // found user; no additional debug logging
                 } else {
                     log.warn("Authenticated user not found in database: {}", currentUserEmail);
                 }
@@ -77,12 +73,9 @@ public class CampaignService {
 
             // Fallback: Use admin user if no authenticated user found
             if (currentUser == null) {
-                if (log.isDebugEnabled())
-                    log.debug("No authenticated user found, using admin fallback");
                 currentUser = userRepository.findByEmail("admin@fundapp.com")
                         .orElseThrow(() -> new RuntimeException("Admin user not found for fallback"));
-                if (log.isDebugEnabled())
-                    log.debug("Using fallback admin user: {}", currentUser.getName());
+                // using fallback admin user silently
             }
 
             Campaign campaign = new Campaign();
@@ -92,11 +85,8 @@ public class CampaignService {
             campaign.setImageUrl(request.getImageUrl());
             campaign.setCreatedBy(currentUser);
 
-            if (log.isDebugEnabled())
-                log.debug("Saving campaign: {}", campaign.getTitle());
             Campaign savedCampaign = campaignRepository.save(campaign);
-            if (log.isDebugEnabled())
-                log.debug("Campaign saved with ID: {}", savedCampaign.getId());
+            // saved successfully
 
             // Optionally, you can trigger email notifications here if desired
 

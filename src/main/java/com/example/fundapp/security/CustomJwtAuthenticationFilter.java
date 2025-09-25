@@ -37,9 +37,6 @@ public class CustomJwtAuthenticationFilter extends OncePerRequestFilter {
             @NonNull FilterChain chain) throws ServletException, IOException {
 
         String requestURI = request.getRequestURI();
-        String method = request.getMethod();
-        if (log.isDebugEnabled())
-            log.debug("JWT Filter ENTRY - {} {}", method, requestURI);
 
         // Skip JWT processing for most public endpoints
         if (isPublicEndpoint(requestURI)) {
@@ -49,37 +46,27 @@ public class CustomJwtAuthenticationFilter extends OncePerRequestFilter {
 
         try {
             String jwt = getJwtFromRequest(request);
-            if (log.isDebugEnabled()) {
-                log.debug("JWT Filter - Request URI: {}", requestURI);
-                log.debug("JWT Filter - JWT token found: {}", (jwt != null ? "Yes" : "No"));
-            }
+            // avoid verbose debug logs; rely on warnings/errors when applicable
 
             if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)) {
                 String username = tokenProvider.getUsernameFromJWT(jwt);
-                if (log.isDebugEnabled())
-                    log.debug("JWT Filter - Valid token for user: {}", username);
+                // token valid; proceed
                 UserDetails userDetails = customUserDetailsService.loadUserByUsername(username);
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                         userDetails, null, userDetails.getAuthorities());
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authentication);
-                if (log.isDebugEnabled())
-                    log.debug("JWT Filter - Authentication set for user: {}", username);
+                // authentication set
             } else if (StringUtils.hasText(jwt)) {
                 // Token was provided but is invalid/expired -> signal client to refresh
-                if (log.isDebugEnabled())
-                    log.debug("JWT Filter - Invalid/expired JWT provided; returning 401");
+                // invalid/expired token; return 401
                 response.setStatus(401);
                 response.setHeader("X-Error-Reason", "invalid-token");
                 response.setHeader("WWW-Authenticate", "Bearer error=invalid_token");
                 return;
-            } else {
-                if (log.isDebugEnabled())
-                    log.debug("JWT Filter - No JWT token provided");
             }
         } catch (Exception e) {
-            if (log.isDebugEnabled())
-                log.debug("JWT Filter - Exception: {}: {}", e.getClass().getSimpleName(), e.getMessage());
+            // swallow exception and continue unauthenticated
             // Intentionally minimal: on failure, continue without authentication
         }
 
