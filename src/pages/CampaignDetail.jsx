@@ -1,6 +1,6 @@
 import axios from 'axios'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Calendar, IndianRupee, Heart, Target, User } from 'lucide-react'
+import { ArrowLeft, Calendar, Heart, IndianRupee, Target, User } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import { useNavigate, useParams } from 'react-router-dom'

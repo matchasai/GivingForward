@@ -1,10 +1,10 @@
 import axios from 'axios'
 import { motion } from 'framer-motion'
-import { Calendar, IndianRupee, Heart, Target } from 'lucide-react'
-import { formatINR } from '../utils/currency'
+import { Calendar, Heart, IndianRupee, Target } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import { Link } from 'react-router-dom'
+import { formatINR } from '../utils/currency'
 
 const Campaigns = () => {
   const [campaigns, setCampaigns] = useState([])

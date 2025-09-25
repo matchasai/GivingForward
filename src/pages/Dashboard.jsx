@@ -1,10 +1,10 @@
 import axios from 'axios'
 import { motion } from 'framer-motion'
-import { Calendar, IndianRupee, Heart, Target, User } from 'lucide-react'
-import React, { useEffect, useState } from 'react'
+import { Calendar, Heart, IndianRupee, Target, User } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
-import { formatINR } from '../utils/currency'
 import { useAuth } from '../contexts/AuthContext'
+import { formatINR } from '../utils/currency'
 
 const Dashboard = () => {
   const { user } = useAuth()

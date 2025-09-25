@@ -1,6 +1,26 @@
 import axios from 'axios';
 
-axios.defaults.baseURL = '/';
+// Prefer explicit API base URL from environment (Vite)
+const envBase = (import.meta && import.meta.env && import.meta.env.VITE_API_BASE_URL) || '/';
+
+// Normalize to ensure a single trailing slash behavior
+let normalizedBase = (() => {
+  try {
+    // Leave absolute URLs untouched; ensure trailing slash
+    if (envBase.startsWith('http')) return envBase.endsWith('/') ? envBase : envBase + '/';
+    // Relative: ensure it ends with '/'
+    return envBase.endsWith('/') ? envBase : envBase + '/';
+  } catch {
+    return '/';
+  }
+})();
+
+// If base contains '/api' suffix and our code uses '/api/...' paths, strip trailing '/api' to avoid double '/api'
+if (normalizedBase.startsWith('http')) {
+  normalizedBase = normalizedBase.replace(/\/?api\/?$/i, '');
+}
+
+axios.defaults.baseURL = normalizedBase;
 
 axios.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');

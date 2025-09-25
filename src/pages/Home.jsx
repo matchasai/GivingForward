@@ -1,6 +1,6 @@
 import axios from 'axios'
 import { motion } from 'framer-motion'
-import { ArrowRight, IndianRupee, Heart, Target, Users } from 'lucide-react'
+import { ArrowRight, Heart, IndianRupee, Target, Users } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { formatINR } from '../utils/currency'
