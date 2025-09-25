@@ -1,8 +1,9 @@
 import axios from 'axios'
 import { motion } from 'framer-motion'
-import { Calendar, DollarSign, Heart, Target, User } from 'lucide-react'
+import { Calendar, IndianRupee, Heart, Target, User } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
+import { formatINR } from '../utils/currency'
 import { useAuth } from '../contexts/AuthContext'
 
 const Dashboard = () => {
@@ -92,9 +93,9 @@ const Dashboard = () => {
             whileHover={{ scale: 1.05 }}
             className="glass-card p-6 text-center"
           >
-            <DollarSign className="w-12 h-12 text-green-400 mx-auto mb-4" />
+            <IndianRupee className="w-12 h-12 text-green-400 mx-auto mb-4" />
             <h3 className="text-2xl font-bold text-white mb-2">
-              ${stats.totalDonated.toLocaleString()}
+              {formatINR(stats.totalDonated)}
             </h3>
             <p className="text-gray-300">Total Donated</p>
           </motion.div>
@@ -115,9 +116,7 @@ const Dashboard = () => {
             className="glass-card p-6 text-center"
           >
             <Target className="w-12 h-12 text-blue-400 mx-auto mb-4" />
-            <h3 className="text-2xl font-bold text-white mb-2">
-              ${stats.averageDonation.toFixed(2)}
-            </h3>
+            <h3 className="text-2xl font-bold text-white mb-2">{formatINR(stats.averageDonation)}</h3>
             <p className="text-gray-300">Average Donation</p>
           </motion.div>
         </motion.div>
@@ -163,9 +162,7 @@ const Dashboard = () => {
                   </div>
                   
                   <div className="text-right">
-                    <p className="text-green-400 font-bold text-lg">
-                      ${Number(donation.amount).toLocaleString()}
-                    </p>
+                    <p className="text-green-400 font-bold text-lg">{formatINR(donation.amount)}</p>
                     <span className={`text-xs px-2 py-1 rounded-full ${
                       donation.paymentStatus === 'PAID' 
                         ? 'bg-green-500/20 text-green-400' 

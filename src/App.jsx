@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import { Navigate, Route, Routes } from 'react-router-dom'
+import './axiosSetup'
 import GlobalError from './components/GlobalError'
 import LoadingSpinner from './components/LoadingSpinner'
 import Navbar from './components/Navbar'

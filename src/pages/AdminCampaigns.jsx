@@ -2,6 +2,7 @@ import axios from 'axios'
 import { motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { formatINR } from '../utils/currency'
 
 const emptyForm = { id: null, title: '', description: '', targetAmount: '', imageUrl: '' }
 
@@ -16,15 +17,16 @@ export default function AdminCampaigns() {
 
   const confirmNotify = async () => {
     if (!notifyCampaign) return
+    // Close the pop immediately
+    setShowNotifyModal(false)
+    const campaign = notifyCampaign
+    setNotifyCampaign(null)
     try {
-      await axios.post(`/api/campaigns/${notifyCampaign.id}/notify`)
-      setShowNotifyModal(false)
-      setNotifyCampaign(null)
+      await axios.post(`/api/campaigns/${campaign.id}/notify`)
       // Optionally show a success modal or toast here
     } catch (error) {
-      setShowNotifyModal(false)
-      setNotifyCampaign(null)
       // Optionally show an error modal or toast here
+      console.error('Notify failed:', error)
     }
   }
   // Notify users about campaign
@@ -124,17 +126,10 @@ export default function AdminCampaigns() {
 
   const confirmDelete = async () => {
     const { id, title } = selectedCampaign
-    console.log('Delete attempt - Campaign ID:', id)
-    console.log('Delete attempt - User:', user)
-    console.log('Delete attempt - Token:', token ? 'Present' : 'Missing')
-    
     try {
-      const response = await axios.delete(`/api/campaigns/${id}`)
-      console.log('Delete response:', response.status, response.statusText)
-      
+      await axios.delete(`/api/campaigns/${id}`)
       // Refresh the campaigns list
       await loadCampaigns()
-      console.log('Campaign deleted successfully and list refreshed')
       setShowDeleteModal(false)
       setSelectedCampaign(null)
     } catch (error) {
@@ -159,7 +154,6 @@ export default function AdminCampaigns() {
     try {
       await axios.patch(`/api/campaigns/${id}/toggle-status`)
       await loadCampaigns()
-      console.log(`Campaign ${action}d successfully`)
       setShowToggleModal(false)
       setSelectedCampaign(null)
       setActionType('')
@@ -274,8 +268,8 @@ export default function AdminCampaigns() {
                     <td className="p-2">{c.id}</td>
                     <td className="p-2">{c.title}</td>
                     <td className="p-2">{String(c.active)}</td>
-                    <td className="p-2">${Number(c.currentAmount).toLocaleString()}</td>
-                    <td className="p-2">${Number(c.goalAmount).toLocaleString()}</td>
+                    <td className="p-2">{formatINR(c.currentAmount)}</td>
+                    <td className="p-2">{formatINR(c.goalAmount)}</td>
                     <td className="p-2 flex gap-2">
                       <button className="glass-button bg-blue-500/20" onClick={()=>onEdit(c)}>Edit</button>
                       <button 

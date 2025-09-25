@@ -1,6 +1,7 @@
 import axios from 'axios'
 import { motion } from 'framer-motion'
-import { Calendar, DollarSign, Heart, Target } from 'lucide-react'
+import { Calendar, IndianRupee, Heart, Target } from 'lucide-react'
+import { formatINR } from '../utils/currency'
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import { Link } from 'react-router-dom'
@@ -35,9 +36,14 @@ const Campaigns = () => {
 
   // Helper to calculate progress percentage
   const getProgressPercentage = (campaign) => {
-    if (!campaign || !campaign.currentAmount || !campaign.targetAmount || campaign.targetAmount === 0) return 0;
-    return Math.min(100, Math.round((campaign.currentAmount / campaign.targetAmount) * 100));
-  };
+    if (!campaign) return 0
+    const curr = Number(campaign.currentAmount ?? 0)
+    const target = Number(campaign.targetAmount ?? 0)
+    if (!isFinite(curr) || !isFinite(target) || target <= 0) return 0
+    let pct = (curr / target) * 100
+    if (pct > 0 && pct < 0.1) pct = 0.1
+    return Math.min(100, pct)
+  }
 
   return (
     <div className="min-h-screen">
@@ -86,7 +92,7 @@ const Campaigns = () => {
               <div className="mb-4">
                 <div className="flex justify-between text-sm text-gray-300 mb-2">
                   <span>Progress</span>
-                  <span>{getProgressPercentage(campaign)}%</span>
+                  <span>{getProgressPercentage(campaign).toFixed(1)}%</span>
                 </div>
                 <div className="w-full bg-gray-700 rounded-full h-2">
                   <motion.div
@@ -100,17 +106,17 @@ const Campaigns = () => {
               
               <div className="grid grid-cols-2 gap-4 mb-6">
                 <div className="text-center">
-                  <DollarSign className="w-5 h-5 text-green-400 mx-auto mb-1" />
+                  <IndianRupee className="w-5 h-5 text-green-400 mx-auto mb-1" />
                   <p className="text-sm text-gray-300">Raised</p>
                   <p className="text-white font-semibold">
-                    ${Number(campaign.currentAmount).toLocaleString()}
+                    {formatINR(campaign.currentAmount)}
                   </p>
                 </div>
                 <div className="text-center">
                   <Target className="w-5 h-5 text-blue-400 mx-auto mb-1" />
                   <p className="text-sm text-gray-300">Goal</p>
                   <p className="text-white font-semibold">
-                    ${Number(campaign.targetAmount).toLocaleString()}
+                    {formatINR(campaign.targetAmount)}
                   </p>
                 </div>
               </div>
@@ -120,7 +126,7 @@ const Campaigns = () => {
                   <Calendar className="w-4 h-4" />
                   <span>{new Date(campaign.createdAt).toLocaleDateString()}</span>
                 </div>
-                {campaign.isFullyFunded?.() && (
+                {Number(campaign.currentAmount ?? 0) >= Number(campaign.targetAmount ?? 0) && (
                   <span className="bg-green-500/20 text-green-400 px-2 py-1 rounded-full text-xs">
                     Fully Funded
                   </span>

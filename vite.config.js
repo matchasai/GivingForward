@@ -2,7 +2,7 @@ import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
 // https://vitejs.dev/config/
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   plugins: [react()],
   server: {
     proxy: {
@@ -27,8 +27,8 @@ export default defineConfig({
       }
     }
   },
-  define: {
-    // Reduce React DevTools message in production
+  define: command === 'build' ? {
+    // Reduce React DevTools message in production only
     __REACT_DEVTOOLS_GLOBAL_HOOK__: '({ isDisabled: true })'
-  }
-}) 
+  } : {}
+})) 

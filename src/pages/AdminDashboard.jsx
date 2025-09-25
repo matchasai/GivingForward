@@ -1,14 +1,17 @@
 import axios from 'axios'
 import { motion } from 'framer-motion'
-import { Activity, DollarSign, Target, TrendingUp, Users } from 'lucide-react'
+import { Activity, IndianRupee, Target, TrendingUp, Users } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
+import { formatINR } from '../utils/currency'
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState({})
   const [users, setUsers] = useState([])
   const [activity, setActivity] = useState({})
   const [loading, setLoading] = useState(true)
+
+  const formatCurrency = (val) => formatINR(val)
 
   useEffect(() => {
     fetchAdminData()
@@ -82,9 +85,9 @@ const AdminDashboard = () => {
             whileHover={{ scale: 1.05 }}
             className="glass-card p-6 text-center"
           >
-            <DollarSign className="w-12 h-12 text-yellow-400 mx-auto mb-4" />
+            <IndianRupee className="w-12 h-12 text-yellow-400 mx-auto mb-4" />
             <h3 className="text-3xl font-bold text-white mb-2">
-              ${stats.totalRaised ? Number(stats.totalRaised).toLocaleString() : 0}
+              {formatCurrency(stats.totalRaised)}
             </h3>
             <p className="text-gray-300">Total Raised</p>
           </motion.div>
@@ -123,19 +126,30 @@ const AdminDashboard = () => {
                 >
                   <div className="flex items-center space-x-3">
                     <div className="w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center">
-                      <DollarSign className="w-4 h-4 text-green-400" />
+                      <IndianRupee className="w-4 h-4 text-green-400" />
                     </div>
                     <div>
-                      <p className="text-white font-medium">New Donation</p>
-                      <p className="text-sm text-gray-400">{donation.campaignTitle || 'Campaign'}</p>
+                      <p className="text-white font-medium">
+                        {donation.userName ? (
+                          <>
+                            <span className="text-purple-300">{donation.userName}</span> donated to{' '}
+                            <span className="text-blue-300">{donation.campaignTitle || 'Campaign'}</span>
+                          </>
+                        ) : (
+                          <>
+                            Donation to <span className="text-blue-300">{donation.campaignTitle || 'Campaign'}</span>
+                          </>
+                        )}
+                      </p>
+                      {donation.userEmail && (
+                        <p className="text-xs text-gray-400">{donation.userEmail}</p>
+                      )}
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-green-400 font-semibold">
-                      ${Number(donation.amount).toLocaleString()}
-                    </p>
+                    <p className="text-green-400 font-semibold">{formatCurrency(donation.amount)}</p>
                     <p className="text-xs text-gray-400">
-                      {new Date(donation.donatedAt).toLocaleDateString()}
+                      {new Date(donation.donatedAt).toLocaleString()}
                     </p>
                   </div>
                 </motion.div>
@@ -159,9 +173,7 @@ const AdminDashboard = () => {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-blue-400 font-semibold">
-                      ${Number(campaign.targetAmount).toLocaleString()}
-                    </p>
+                    <p className="text-blue-400 font-semibold">{formatCurrency(campaign.targetAmount)}</p>
                     <p className="text-xs text-gray-400">
                       {new Date(campaign.createdAt).toLocaleDateString()}
                     </p>

@@ -1,8 +1,9 @@
 import axios from 'axios'
 import { motion } from 'framer-motion'
-import { ArrowRight, DollarSign, Heart, Target, Users } from 'lucide-react'
+import { ArrowRight, IndianRupee, Heart, Target, Users } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { formatINR } from '../utils/currency'
 
 const Home = () => {
   const [campaigns, setCampaigns] = useState([])
@@ -100,9 +101,9 @@ const Home = () => {
           whileHover={{ scale: 1.05 }}
           className="glass-card p-6 text-center"
         >
-          <DollarSign className="w-12 h-12 text-yellow-400 mx-auto mb-4" />
+          <IndianRupee className="w-12 h-12 text-yellow-400 mx-auto mb-4" />
           <h3 className="text-2xl font-bold text-white mb-2">
-            ${stats.totalRaised ? Number(stats.totalRaised).toLocaleString() : 0}
+            {stats.totalRaised ? formatINR(stats.totalRaised) : formatINR(0)}
           </h3>
           <p className="text-gray-300">Total Raised</p>
         </motion.div>
@@ -160,8 +161,8 @@ const Home = () => {
                     </div>
                   </div>
                   <div className="flex justify-between text-sm text-gray-300 mb-4">
-                    <span>${Number(campaign.currentAmount).toLocaleString()}</span>
-                    <span>${Number(campaign.targetAmount).toLocaleString()}</span>
+                    <span>{formatINR(campaign.currentAmount)}</span>
+                    <span>{formatINR(campaign.targetAmount)}</span>
                   </div>
                   <Link to={`/campaigns/${campaign.id}`}>
                     <motion.button

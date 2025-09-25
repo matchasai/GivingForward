@@ -1,12 +1,15 @@
 import axios from 'axios'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Calendar, DollarSign, Heart, Target, User } from 'lucide-react'
+import { ArrowLeft, Calendar, IndianRupee, Heart, Target, User } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import { useNavigate, useParams } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
+import { formatINR } from '../utils/currency'
 
 const CampaignDetail = () => {
   const { id } = useParams()
+  const { user } = useAuth()
   const navigate = useNavigate()
   const [campaign, setCampaign] = useState(null)
   const [donations, setDonations] = useState([])
@@ -35,9 +38,7 @@ const CampaignDetail = () => {
 
   const fetchDonations = async () => {
     try {
-      console.log('Fetching donations for campaign:', id)
       const response = await axios.get(`/api/donations/campaign/${id}`)
-      console.log('Donations response:', response.data)
       setDonations(response.data || [])
     } catch (error) {
       console.error('Error fetching donations:', error)
@@ -48,29 +49,71 @@ const CampaignDetail = () => {
 
   const handleDonation = async (e) => {
     e.preventDefault()
-    
-    if (!donationAmount || parseFloat(donationAmount) <= 0) {
+    const amt = parseFloat(donationAmount)
+    if (!donationAmount || isNaN(amt) || amt <= 0) {
       toast.error('Please enter a valid amount')
       return
     }
-
+    if (amt < 1) {
+      toast.error('Minimum donation is ₹1.00')
+      return
+    }
     setProcessingDonation(true)
-    
     try {
-      await axios.post('/api/donations', {
-        campaignId: parseInt(id),
-        amount: parseFloat(donationAmount)
+      // 1) Ask backend to create a Razorpay order (amount in rupees)
+      const createRes = await axios.post('/api/payments/create-order', {
+        campaignId: id, // backend expects String campaignId
+        amount: amt
       })
-      
-      toast.success('Donation successful! Thank you for your support.')
-      setDonationAmount('')
-      setShowDonationForm(false)
-      fetchCampaign() // Refresh campaign data
-      fetchDonations() // Refresh donation history
+      const { orderId, key, amount, currency } = createRes.data
+
+      // 2) Open Razorpay Checkout
+      const options = {
+        key,
+        amount, // in paise
+        currency,
+        name: 'GivingForward',
+        description: `Donation for Campaign #${id}`,
+        order_id: orderId,
+        handler: async function (response) {
+          try {
+            // 3) Verify payment on backend and record donation
+            await axios.post('/api/payments/verify', {
+              campaignId: id,
+              amount: amt,
+              razorpayOrderId: response.razorpay_order_id,
+              razorpayPaymentId: response.razorpay_payment_id,
+              razorpaySignature: response.razorpay_signature,
+            })
+            toast.success('Donation successful! Thank you for your support.')
+            setDonationAmount('')
+            setShowDonationForm(false)
+            fetchCampaign()
+            fetchDonations()
+          } catch (err) {
+            console.error('Verification failed:', err)
+            toast.error('Payment verification failed')
+          } finally {
+            setProcessingDonation(false)
+          }
+        },
+        theme: {
+          color: '#7c3aed'
+        }
+      }
+
+      const rzp = new window.Razorpay(options)
+      rzp.on('payment.failed', function (response) {
+        console.error('Payment failed:', response.error)
+        toast.error(response?.error?.description || 'Payment failed')
+        setProcessingDonation(false)
+      })
+      rzp.open()
     } catch (error) {
-      console.error('Error making donation:', error)
-      toast.error('Failed to process donation')
-    } finally {
+      console.error('Error initializing payment:', error)
+      const msg = error?.response?.data?.message || 'Failed to initialize payment'
+      const details = error?.response?.data?.details
+      toast.error(details ? `${msg}: ${details}` : msg)
       setProcessingDonation(false)
     }
   }
@@ -96,6 +139,15 @@ const CampaignDetail = () => {
       </div>
     )
   }
+
+  const progressPercent = (() => {
+    const curr = Number(campaign?.currentAmount ?? 0)
+    const target = Number(campaign?.targetAmount ?? 0)
+    if (!isFinite(curr) || !isFinite(target) || target <= 0) return 0
+    let pct = (curr / target) * 100
+    if (pct > 0 && pct < 0.1) pct = 0.1
+    return Math.min(100, pct)
+  })()
 
   return (
     <div className="min-h-screen">
@@ -143,17 +195,17 @@ const CampaignDetail = () => {
               
               <div className="grid grid-cols-2 gap-4 mb-6">
                 <div className="text-center">
-                  <DollarSign className="w-8 h-8 text-green-400 mx-auto mb-2" />
+                  <IndianRupee className="w-8 h-8 text-green-400 mx-auto mb-2" />
                   <p className="text-sm text-gray-300">Raised</p>
                   <p className="text-2xl font-bold text-white">
-                    ${Number(campaign.currentAmount).toLocaleString()}
+                    {formatINR(campaign.currentAmount)}
                   </p>
                 </div>
                 <div className="text-center">
                   <Target className="w-8 h-8 text-blue-400 mx-auto mb-2" />
                   <p className="text-sm text-gray-300">Goal</p>
                   <p className="text-2xl font-bold text-white">
-                    ${Number(campaign.targetAmount).toLocaleString()}
+                    {formatINR(campaign.targetAmount)}
                   </p>
                 </div>
               </div>
@@ -161,16 +213,12 @@ const CampaignDetail = () => {
               <div className="mb-6">
                 <div className="flex justify-between text-sm text-gray-300 mb-2">
                   <span>Progress</span>
-                  <span>{campaign.currentAmount && campaign.targetAmount
-                    ? Math.min(100, Math.round((campaign.currentAmount / campaign.targetAmount) * 100))
-                    : 0}%</span>
+                  <span>{progressPercent.toFixed(1)}%</span>
                 </div>
                 <div className="w-full bg-gray-700 rounded-full h-3">
                   <motion.div
                     initial={{ width: 0 }}
-                    animate={{ width: `${campaign.currentAmount && campaign.targetAmount
-                      ? Math.min(100, Math.round((campaign.currentAmount / campaign.targetAmount) * 100))
-                      : 0}%` }}
+                    animate={{ width: `${progressPercent}%` }}
                     transition={{ duration: 1, delay: 0.5 }}
                     className="bg-gradient-to-r from-purple-500 to-pink-500 h-3 rounded-full"
                   />
@@ -182,7 +230,7 @@ const CampaignDetail = () => {
                   <Calendar className="w-4 h-4" />
                   <span>Created {new Date(campaign.createdAt).toLocaleDateString()}</span>
                 </div>
-                {campaign.isFullyFunded?.() && (
+                {Number(campaign.currentAmount ?? 0) >= Number(campaign.targetAmount ?? 0) && (
                   <span className="bg-green-500/20 text-green-400 px-3 py-1 rounded-full">
                     Fully Funded
                   </span>
@@ -205,7 +253,13 @@ const CampaignDetail = () => {
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={() => setShowDonationForm(true)}
+                  onClick={() => {
+                    if (!user) {
+                      toast.error('Please login to make a donation')
+                      return
+                    }
+                    setShowDonationForm(true)
+                  }}
                   className="w-full glass-button text-lg py-4 flex items-center justify-center space-x-2"
                 >
                   <Heart className="w-5 h-5" />
@@ -215,7 +269,7 @@ const CampaignDetail = () => {
                 <form onSubmit={handleDonation} className="space-y-4">
                   <div>
                     <label htmlFor="amount" className="block text-sm font-medium text-gray-300 mb-2">
-                      Donation Amount ($)
+                      Donation Amount (₹)
                     </label>
                     <input
                       id="amount"
@@ -252,10 +306,9 @@ const CampaignDetail = () => {
               )}
               
               <div className="mt-6 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-                <h3 className="text-lg font-semibold text-blue-300 mb-2">Fake Payment System</h3>
+                <h3 className="text-lg font-semibold text-blue-300 mb-2">Secure Payments</h3>
                 <p className="text-sm text-gray-300">
-                  This is a demonstration system. All payments are simulated and will always succeed.
-                  In a real application, this would integrate with payment gateways like Stripe or PayPal.
+                  Payments are processed securely via Razorpay. Your card details are handled by Razorpay.
                 </p>
               </div>
             </div>
@@ -282,7 +335,7 @@ const CampaignDetail = () => {
                         </div>
                       </div>
                       <span className="text-green-400 font-semibold">
-                        ${Number(donation.amount || 0).toLocaleString()}
+                        {formatINR(donation.amount || 0)}
                       </span>
                     </div>
                   ))}
