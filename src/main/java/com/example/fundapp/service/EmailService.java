@@ -33,6 +33,7 @@ public class EmailService {
         message.setText("Dear supporter,\n\nA new campaign has been launched: " + campaign.getTitle() +
                 "\nDescription: " + campaign.getDescription() +
                 "\nTarget Amount: $" + campaign.getTargetAmount() +
+                "\nTarget Reached: $" + campaign.getCurrentAmount() +
                 "\n\nHelp us reach our goal! Visit the site to contribute.\n\nThank you!");
         mailSender.send(message);
     }

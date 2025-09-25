@@ -4,10 +4,10 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -25,7 +25,6 @@ import com.example.fundapp.model.Donation;
 import com.example.fundapp.repository.DonationRepository;
 import com.example.fundapp.service.DonationService;
 
-import jakarta.persistence.criteria.Predicate;
 import jakarta.validation.Valid;
 
 @RestController
@@ -57,8 +56,8 @@ public class DonationController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "donatedAt,desc") String sort,
-            @RequestParam(required = false) Long userId,
-            @RequestParam(required = false) Long campaignId,
+            @RequestParam(required = false) String userId,
+            @RequestParam(required = false) String campaignId,
             @RequestParam(required = false) String status) {
 
         String[] sortParts = sort.split(",");
@@ -67,44 +66,57 @@ public class DonationController {
                 : Sort.by(sortParts[0]).descending();
         Pageable pageable = PageRequest.of(page, size, s);
 
-        Specification<Donation> spec = (root, query, cb) -> {
-            java.util.ArrayList<Predicate> predicates = new java.util.ArrayList<>();
-            if (userId != null) {
-                predicates.add(cb.equal(root.get("user").get("id"), userId));
-            }
-            if (campaignId != null) {
-                predicates.add(cb.equal(root.get("campaign").get("id"), campaignId));
-            }
-            if (status != null && !status.isBlank()) {
-                predicates
-                        .add(cb.equal(root.get("paymentStatus"), Donation.PaymentStatus.valueOf(status.toUpperCase())));
-            }
-            return cb.and(predicates.toArray(new Predicate[0]));
-        };
-
-        Page<DonationDto> pageDto = donationRepository.findAll(spec, pageable).map(this::toDto);
+        var all = donationRepository.findAll();
+        var filtered = all.stream()
+                .filter(d -> userId == null || d.getUser() != null && userId.equals(d.getUser().getId()))
+                .filter(d -> campaignId == null
+                        || d.getCampaign() != null && campaignId.equals(d.getCampaign().getId()))
+                .filter(d -> status == null || status.isBlank() || (d.getPaymentStatus() != null
+                        && d.getPaymentStatus().name().equalsIgnoreCase(status)))
+                .sorted((a, b) -> {
+                    var prop = sortParts[0];
+                    int cmp;
+                    switch (prop) {
+                        case "donatedAt":
+                            cmp = a.getDonatedAt().compareTo(b.getDonatedAt());
+                            break;
+                        case "amount":
+                            cmp = a.getAmount().compareTo(b.getAmount());
+                            break;
+                        default:
+                            cmp = String.valueOf(a.getId()).compareTo(String.valueOf(b.getId()));
+                    }
+                    return sortParts.length == 2 && sortParts[1].equalsIgnoreCase("asc") ? cmp : -cmp;
+                })
+                .toList();
+        int start = Math.min((int) pageable.getOffset(), filtered.size());
+        int end = Math.min(start + pageable.getPageSize(), filtered.size());
+        Page<DonationDto> pageDto = new PageImpl<>(filtered.subList(start, end).stream().map(this::toDto).toList(),
+                pageable, filtered.size());
         return ResponseEntity.ok(pageDto);
     }
 
     @GetMapping("/campaign/{campaignId}")
-    public ResponseEntity<List<DonationDto>> getDonationsByCampaign(@PathVariable Long campaignId) {
-        List<DonationDto> list = donationRepository.findAll().stream()
-                .filter(d -> d.getCampaign() != null && d.getCampaign().getId().equals(campaignId))
+    public ResponseEntity<List<DonationDto>> getDonationsByCampaign(@PathVariable String campaignId) {
+        List<DonationDto> list = donationRepository.findByCampaign_Id(campaignId).stream()
                 .sorted((a, b) -> b.getDonatedAt().compareTo(a.getDonatedAt()))
+                // Show real donor details (per requirement)
                 .map(this::toDto)
                 .toList();
         return ResponseEntity.ok(list);
     }
 
     private DonationDto toDto(Donation d) {
-        Long uId = d.getUser() != null ? d.getUser().getId() : null;
+        String uId = d.getUser() != null ? d.getUser().getId() : null;
         String uName = d.getUser() != null ? d.getUser().getName() : null;
         String uEmail = d.getUser() != null ? d.getUser().getEmail() : null;
-        Long cId = d.getCampaign() != null ? d.getCampaign().getId() : null;
+        String cId = d.getCampaign() != null ? d.getCampaign().getId() : null;
         String cTitle = d.getCampaign() != null ? d.getCampaign().getTitle() : null;
         return new DonationDto(
                 d.getId(), uId, uName, uEmail, cId, cTitle, d.getAmount(),
                 d.getPaymentStatus() != null ? d.getPaymentStatus().name() : null,
                 d.getDonatedAt());
     }
+
+    // Note: if public anonymity is desired later, reintroduce an anonymized mapper.
 }

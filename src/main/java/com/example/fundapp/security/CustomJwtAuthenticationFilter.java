@@ -2,6 +2,8 @@ package com.example.fundapp.security;
 
 import java.io.IOException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -20,6 +22,8 @@ import jakarta.servlet.http.HttpServletResponse;
 
 public class CustomJwtAuthenticationFilter extends OncePerRequestFilter {
 
+    private static final Logger log = LoggerFactory.getLogger(CustomJwtAuthenticationFilter.class);
+
     @Autowired
     private JwtTokenProvider tokenProvider;
 
@@ -34,9 +38,10 @@ public class CustomJwtAuthenticationFilter extends OncePerRequestFilter {
 
         String requestURI = request.getRequestURI();
         String method = request.getMethod();
-        System.out.println("JWT Filter ENTRY - " + method + " " + requestURI);
+        if (log.isDebugEnabled())
+            log.debug("JWT Filter ENTRY - {} {}", method, requestURI);
 
-        // Skip JWT processing for public endpoints
+        // Skip JWT processing for most public endpoints
         if (isPublicEndpoint(requestURI)) {
             chain.doFilter(request, response);
             return;
@@ -44,23 +49,37 @@ public class CustomJwtAuthenticationFilter extends OncePerRequestFilter {
 
         try {
             String jwt = getJwtFromRequest(request);
-            System.out.println("JWT Filter - Request URI: " + requestURI);
-            System.out.println("JWT Filter - JWT token found: " + (jwt != null ? "Yes" : "No"));
+            if (log.isDebugEnabled()) {
+                log.debug("JWT Filter - Request URI: {}", requestURI);
+                log.debug("JWT Filter - JWT token found: {}", (jwt != null ? "Yes" : "No"));
+            }
 
             if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)) {
                 String username = tokenProvider.getUsernameFromJWT(jwt);
-                System.out.println("JWT Filter - Valid token for user: " + username);
+                if (log.isDebugEnabled())
+                    log.debug("JWT Filter - Valid token for user: {}", username);
                 UserDetails userDetails = customUserDetailsService.loadUserByUsername(username);
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                         userDetails, null, userDetails.getAuthorities());
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authentication);
-                System.out.println("JWT Filter - Authentication set for user: " + username);
+                if (log.isDebugEnabled())
+                    log.debug("JWT Filter - Authentication set for user: {}", username);
+            } else if (StringUtils.hasText(jwt)) {
+                // Token was provided but is invalid/expired -> signal client to refresh
+                if (log.isDebugEnabled())
+                    log.debug("JWT Filter - Invalid/expired JWT provided; returning 401");
+                response.setStatus(401);
+                response.setHeader("X-Error-Reason", "invalid-token");
+                response.setHeader("WWW-Authenticate", "Bearer error=invalid_token");
+                return;
             } else {
-                System.out.println("JWT Filter - No valid JWT token found");
+                if (log.isDebugEnabled())
+                    log.debug("JWT Filter - No JWT token provided");
             }
         } catch (Exception e) {
-            System.out.println("JWT Filter - Exception: " + e.getMessage());
+            if (log.isDebugEnabled())
+                log.debug("JWT Filter - Exception: {}: {}", e.getClass().getSimpleName(), e.getMessage());
             // Intentionally minimal: on failure, continue without authentication
         }
 
@@ -78,7 +97,8 @@ public class CustomJwtAuthenticationFilter extends OncePerRequestFilter {
     private String getJwtFromRequest(HttpServletRequest request) {
         String bearerToken = request.getHeader("Authorization");
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
-            return bearerToken.substring(7);
+            String token = bearerToken.substring(7);
+            return token != null ? token.trim() : null;
         }
         return null;
     }

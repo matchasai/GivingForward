@@ -3,37 +3,23 @@ package com.example.fundapp.model;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.DBRef;
+import org.springframework.data.mongodb.core.mapping.Document;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
-@Entity
-@Table(name = "donations")
+@Document(collection = "donations")
 public class Donation {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    @JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
+    @DBRef(lazy = true)
     private User user;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "campaign_id")
-    @JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
+    @DBRef(lazy = true)
     private Campaign campaign;
 
     @NotNull
@@ -42,7 +28,6 @@ public class Donation {
 
     private LocalDateTime donatedAt = LocalDateTime.now();
 
-    @Enumerated(EnumType.STRING)
     private PaymentStatus paymentStatus = PaymentStatus.PAID;
 
     public enum PaymentStatus {
@@ -60,11 +45,11 @@ public class Donation {
     }
 
     // Getters and Setters
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
     }
 

@@ -3,7 +3,7 @@ package com.example.fundapp.dto;
 public class AuthResponse {
     private String token;
     private String type = "Bearer";
-    private Long id;
+    private String id;
     private String name;
     private String email;
     private String role;
@@ -13,7 +13,7 @@ public class AuthResponse {
     public AuthResponse() {
     }
 
-    public AuthResponse(String token, Long id, String name, String email, String role) {
+    public AuthResponse(String token, String id, String name, String email, String role) {
         this.token = token;
         this.id = id;
         this.name = name;
@@ -37,11 +37,11 @@ public class AuthResponse {
         this.type = type;
     }
 
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
     }
 

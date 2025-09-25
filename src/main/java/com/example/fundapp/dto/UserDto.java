@@ -3,7 +3,7 @@ package com.example.fundapp.dto;
 import java.time.LocalDateTime;
 
 public class UserDto {
-    private Long id;
+    private String id;
     private String name;
     private String email;
     private String role;
@@ -12,7 +12,7 @@ public class UserDto {
     public UserDto() {
     }
 
-    public UserDto(Long id, String name, String email, String role, LocalDateTime createdAt) {
+    public UserDto(String id, String name, String email, String role, LocalDateTime createdAt) {
         this.id = id;
         this.name = name;
         this.email = email;
@@ -20,11 +20,11 @@ public class UserDto {
         this.createdAt = createdAt;
     }
 
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
     }
 
@@ -60,9 +60,3 @@ public class UserDto {
         this.createdAt = createdAt;
     }
 }
-
-
-
-
-
-

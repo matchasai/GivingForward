@@ -11,8 +11,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.fundapp.repository.CampaignRepository;
-import com.example.fundapp.repository.DonationRepository;
 import com.example.fundapp.repository.UserRepository;
+import com.example.fundapp.service.DonationService;
 
 @RestController
 @RequestMapping("/api/public")
@@ -25,17 +25,19 @@ public class PublicController {
     private CampaignRepository campaignRepository;
 
     @Autowired
-    private DonationRepository donationRepository;
+    private DonationService donationService;
 
     @GetMapping("/stats")
     public ResponseEntity<Map<String, Object>> getPublicStats() {
         Map<String, Object> stats = new HashMap<>();
 
         long totalUsers = userRepository.count();
-        long activeCampaigns = campaignRepository.countActiveCampaigns();
-        BigDecimal totalRaised = campaignRepository.getTotalRaisedAmount();
-        BigDecimal totalDonations = donationRepository.getTotalDonationsAmount();
-        long totalDonationsCount = donationRepository.countTotalDonations();
+        long activeCampaigns = campaignRepository.findByIsActiveTrueOrderByCreatedAtDesc().size();
+        BigDecimal totalRaised = campaignRepository.findByIsActiveTrueOrderByCreatedAtDesc().stream()
+                .map(c -> c.getCurrentAmount())
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal totalDonations = donationService.getTotalDonationsAmount();
+        long totalDonationsCount = donationService.getTotalDonationsCount();
 
         stats.put("totalUsers", totalUsers);
         stats.put("activeCampaigns", activeCampaigns);

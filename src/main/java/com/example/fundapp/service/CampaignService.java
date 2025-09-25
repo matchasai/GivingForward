@@ -3,6 +3,8 @@ package com.example.fundapp.service;
 import java.util.List;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -19,6 +21,8 @@ import com.example.fundapp.repository.UserRepository;
 @Service
 public class CampaignService {
 
+    private static final Logger log = LoggerFactory.getLogger(CampaignService.class);
+
     @Autowired
     private CampaignRepository campaignRepository;
 
@@ -31,7 +35,7 @@ public class CampaignService {
     @Autowired
     private EmailService emailService;
 
-    public void notifyUsersAboutCampaign(Long campaignId) {
+    public void notifyUsersAboutCampaign(String campaignId) {
         Campaign campaign = campaignRepository.findById(campaignId)
                 .orElseThrow(() -> new RuntimeException("Campaign not found"));
         emailService.sendCampaignNotificationToAllUsers(campaign);
@@ -41,7 +45,7 @@ public class CampaignService {
         return campaignRepository.findByIsActiveTrueOrderByCreatedAtDesc();
     }
 
-    public Optional<Campaign> getCampaignById(Long id) {
+    public Optional<Campaign> getCampaignById(String id) {
         return campaignRepository.findById(id);
     }
 
@@ -49,7 +53,8 @@ public class CampaignService {
         try {
             // Get the current authenticated user
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            System.out.println("Authentication object: " + authentication);
+            if (log.isDebugEnabled())
+                log.debug("Authentication object present? {}", authentication != null);
 
             User currentUser = null;
 
@@ -57,23 +62,27 @@ public class CampaignService {
                     !authentication.getName().equals("anonymousUser")) {
 
                 String currentUserEmail = authentication.getName();
-                System.out.println("Creating campaign for authenticated user: " + currentUserEmail);
+                if (log.isDebugEnabled())
+                    log.debug("Creating campaign for authenticated user: {}", currentUserEmail);
 
                 Optional<User> userOptional = userRepository.findByEmail(currentUserEmail);
                 if (userOptional.isPresent()) {
                     currentUser = userOptional.get();
-                    System.out.println("Found authenticated user: " + currentUser.getName());
+                    if (log.isDebugEnabled())
+                        log.debug("Found authenticated user: {}", currentUser.getName());
                 } else {
-                    System.out.println("Authenticated user not found in database: " + currentUserEmail);
+                    log.warn("Authenticated user not found in database: {}", currentUserEmail);
                 }
             }
 
             // Fallback: Use admin user if no authenticated user found
             if (currentUser == null) {
-                System.out.println("No authenticated user found, using admin fallback");
+                if (log.isDebugEnabled())
+                    log.debug("No authenticated user found, using admin fallback");
                 currentUser = userRepository.findByEmail("admin@fundapp.com")
                         .orElseThrow(() -> new RuntimeException("Admin user not found for fallback"));
-                System.out.println("Using fallback admin user: " + currentUser.getName());
+                if (log.isDebugEnabled())
+                    log.debug("Using fallback admin user: {}", currentUser.getName());
             }
 
             Campaign campaign = new Campaign();
@@ -83,21 +92,22 @@ public class CampaignService {
             campaign.setImageUrl(request.getImageUrl());
             campaign.setCreatedBy(currentUser);
 
-            System.out.println("Saving campaign: " + campaign.getTitle());
+            if (log.isDebugEnabled())
+                log.debug("Saving campaign: {}", campaign.getTitle());
             Campaign savedCampaign = campaignRepository.save(campaign);
-            System.out.println("Campaign saved with ID: " + savedCampaign.getId());
+            if (log.isDebugEnabled())
+                log.debug("Campaign saved with ID: {}", savedCampaign.getId());
 
             // Optionally, you can trigger email notifications here if desired
 
             return savedCampaign;
         } catch (Exception e) {
-            System.err.println("Error creating campaign: " + e.getMessage());
-            e.printStackTrace();
+            log.error("Error creating campaign: {}", e.getMessage());
             throw new RuntimeException("Failed to create campaign: " + e.getMessage(), e);
         }
     }
 
-    public Campaign updateCampaign(Long id, CampaignRequest request) {
+    public Campaign updateCampaign(String id, CampaignRequest request) {
         Campaign campaign = campaignRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Campaign not found"));
 
@@ -112,18 +122,19 @@ public class CampaignService {
     }
 
     @Transactional
-    public void deleteCampaign(Long id) {
+    public void deleteCampaign(String id) {
         Campaign campaign = campaignRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Campaign not found"));
 
         // First delete all donations associated with this campaign
-        donationRepository.deleteByCampaignId(id);
+        var donations = donationRepository.findByCampaign_Id(id);
+        donationRepository.deleteAll(donations);
 
         // Then delete the campaign
         campaignRepository.delete(campaign);
     }
 
-    public Campaign toggleCampaignStatus(Long id) {
+    public Campaign toggleCampaignStatus(String id) {
         Campaign campaign = campaignRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Campaign not found"));
 

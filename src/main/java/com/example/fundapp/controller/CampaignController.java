@@ -5,10 +5,10 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -28,7 +28,6 @@ import com.example.fundapp.model.Campaign;
 import com.example.fundapp.repository.CampaignRepository;
 import com.example.fundapp.service.CampaignService;
 
-import jakarta.persistence.criteria.Predicate;
 import jakarta.validation.Valid;
 
 @RestController
@@ -36,7 +35,7 @@ import jakarta.validation.Valid;
 public class CampaignController {
     @PostMapping("/{id}/notify")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> notifyUsersAboutCampaign(@PathVariable Long id) {
+    public ResponseEntity<Void> notifyUsersAboutCampaign(@PathVariable String id) {
         campaignService.notifyUsersAboutCampaign(id);
         return ResponseEntity.ok().build();
     }
@@ -54,7 +53,7 @@ public class CampaignController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Campaign> getCampaign(@PathVariable Long id) {
+    public ResponseEntity<Campaign> getCampaign(@PathVariable String id) {
         Optional<Campaign> campaign = campaignService.getCampaignById(id);
         return campaign.map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
@@ -69,21 +68,22 @@ public class CampaignController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Campaign> updateCampaign(@PathVariable Long id, @Valid @RequestBody CampaignRequest request) {
+    public ResponseEntity<Campaign> updateCampaign(@PathVariable String id,
+            @Valid @RequestBody CampaignRequest request) {
         Campaign campaign = campaignService.updateCampaign(id, request);
         return ResponseEntity.ok(campaign);
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> deleteCampaign(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteCampaign(@PathVariable String id) {
         campaignService.deleteCampaign(id);
         return ResponseEntity.ok().build();
     }
 
     @PatchMapping("/{id}/toggle-status")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Campaign> toggleCampaignStatus(@PathVariable Long id) {
+    public ResponseEntity<Campaign> toggleCampaignStatus(@PathVariable String id) {
         Campaign campaign = campaignService.toggleCampaignStatus(id);
         return ResponseEntity.ok(campaign);
     }
@@ -102,19 +102,32 @@ public class CampaignController {
                 : Sort.by(sortParts[0]).descending();
         Pageable pageable = PageRequest.of(page, size, s);
 
-        Specification<Campaign> spec = (root, query, cb) -> {
-            java.util.ArrayList<Predicate> predicates = new java.util.ArrayList<>();
-            if (search != null && !search.isBlank()) {
-                String like = "%" + search.toLowerCase() + "%";
-                predicates.add(cb.like(cb.lower(root.get("title")), like));
-            }
-            if (active != null) {
-                predicates.add(cb.equal(root.get("isActive"), active));
-            }
-            return cb.and(predicates.toArray(new Predicate[0]));
-        };
-
-        Page<CampaignDto> pageDto = campaignRepository.findAll(spec, pageable).map(this::toDto);
+        var all = campaignRepository.findAll();
+        var filtered = all.stream()
+                .filter(c -> search == null || search.isBlank()
+                        || c.getTitle().toLowerCase().contains(search.toLowerCase()))
+                .filter(c -> active == null || c.isActive() == active)
+                .sorted((a, b) -> {
+                    var sortProp = sortParts[0];
+                    int cmp;
+                    switch (sortProp) {
+                        case "createdAt":
+                            cmp = a.getCreatedAt().compareTo(b.getCreatedAt());
+                            break;
+                        case "title":
+                            cmp = a.getTitle().compareToIgnoreCase(b.getTitle());
+                            break;
+                        case "id":
+                        default:
+                            cmp = String.valueOf(a.getId()).compareTo(String.valueOf(b.getId()));
+                    }
+                    return sortParts.length == 2 && sortParts[1].equalsIgnoreCase("asc") ? cmp : -cmp;
+                })
+                .toList();
+        int start = Math.min((int) pageable.getOffset(), filtered.size());
+        int end = Math.min(start + pageable.getPageSize(), filtered.size());
+        Page<CampaignDto> pageDto = new PageImpl<>(filtered.subList(start, end).stream().map(this::toDto).toList(),
+                pageable, filtered.size());
         return ResponseEntity.ok(pageDto);
     }
 

@@ -1,6 +1,8 @@
 package com.example.fundapp.model;
 
-import jakarta.persistence.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -12,13 +14,11 @@ import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 
-@Entity
-@Table(name = "users")
+@Document(collection = "users")
 public class User implements UserDetails {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
 
     @NotBlank
     @Size(max = 100)
@@ -26,14 +26,13 @@ public class User implements UserDetails {
 
     @NotBlank
     @Email
-    @Column(unique = true)
+    @Indexed(unique = true)
     private String email;
 
     @NotBlank
     @Size(min = 6)
     private String password;
 
-    @Enumerated(EnumType.STRING)
     private Role role = Role.USER;
 
     private boolean notificationsEnabled = true;
@@ -55,11 +54,11 @@ public class User implements UserDetails {
     }
 
     // Getters and Setters
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
     }
 

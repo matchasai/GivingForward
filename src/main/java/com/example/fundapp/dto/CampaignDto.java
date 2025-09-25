@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 public class CampaignDto {
-    private Long id;
+    private String id;
     private String title;
     private String description;
     private boolean active;
@@ -15,7 +15,7 @@ public class CampaignDto {
     public CampaignDto() {
     }
 
-    public CampaignDto(Long id, String title, String description, boolean active, BigDecimal goalAmount,
+    public CampaignDto(String id, String title, String description, boolean active, BigDecimal goalAmount,
             BigDecimal currentAmount, LocalDateTime createdAt) {
         this.id = id;
         this.title = title;
@@ -26,11 +26,11 @@ public class CampaignDto {
         this.createdAt = createdAt;
     }
 
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
     }
 

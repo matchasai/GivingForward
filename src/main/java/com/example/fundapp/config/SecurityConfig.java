@@ -46,12 +46,22 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/account/password-reset/**").permitAll()
+                        .requestMatchers("/api/payments/**").authenticated()
                         .requestMatchers("/api/public/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/donations/campaign/**").permitAll()
                         .requestMatchers("/api/campaigns/active").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/campaigns").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/campaigns/{id}").permitAll()
                         .requestMatchers("/uploads/**").permitAll()
                         .anyRequest().authenticated())
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            // Return 401 for unauthenticated requests instead of default 403 to trigger
+                            // frontend refresh flow
+                            response.setStatus(401);
+                            response.setHeader("X-Error-Reason", "unauthenticated");
+                            response.setHeader("WWW-Authenticate", "Bearer realm=\"api\"");
+                        }))
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .addFilterBefore(jwtAuthenticationFilter(),
                         org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class);
@@ -66,6 +76,7 @@ public class SecurityConfig {
         configuration
                 .setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept", "Origin", "User-Agent",
                         "X-Requested-With", "X-Error-Reason"));
+        configuration.setExposedHeaders(Arrays.asList("X-Error-Reason", "WWW-Authenticate"));
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

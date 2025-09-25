@@ -4,11 +4,11 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 public class DonationDto {
-    private Long id;
-    private Long userId;
+    private String id;
+    private String userId;
     private String userName;
     private String userEmail;
-    private Long campaignId;
+    private String campaignId;
     private String campaignTitle;
     private BigDecimal amount;
     private String paymentStatus;
@@ -17,7 +17,8 @@ public class DonationDto {
     public DonationDto() {
     }
 
-    public DonationDto(Long id, Long userId, String userName, String userEmail, Long campaignId, String campaignTitle,
+    public DonationDto(String id, String userId, String userName, String userEmail, String campaignId,
+            String campaignTitle,
             BigDecimal amount, String paymentStatus, LocalDateTime donatedAt) {
         this.id = id;
         this.userId = userId;
@@ -30,19 +31,19 @@ public class DonationDto {
         this.donatedAt = donatedAt;
     }
 
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
     }
 
-    public Long getUserId() {
+    public String getUserId() {
         return userId;
     }
 
-    public void setUserId(Long userId) {
+    public void setUserId(String userId) {
         this.userId = userId;
     }
 
@@ -62,11 +63,11 @@ public class DonationDto {
         this.userEmail = userEmail;
     }
 
-    public Long getCampaignId() {
+    public String getCampaignId() {
         return campaignId;
     }
 
-    public void setCampaignId(Long campaignId) {
+    public void setCampaignId(String campaignId) {
         this.campaignId = campaignId;
     }
 

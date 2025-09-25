@@ -4,8 +4,11 @@ import java.math.BigDecimal;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+// import org.springframework.transaction.annotation.Transactional;
 
 import com.example.fundapp.dto.DonationRequest;
 import com.example.fundapp.model.Campaign;
@@ -27,11 +30,20 @@ public class DonationService {
     @Autowired
     private UserRepository userRepository;
 
-    @Transactional
     public Donation makeDonation(DonationRequest request) {
-        // For now, use a default user since we removed JWT authentication
-        User currentUser = userRepository.findByEmail("user@fundapp.com")
-                .orElseThrow(() -> new RuntimeException("Default user not found"));
+        // Prefer authenticated user if present; fall back to default seeded user
+        User currentUser = null;
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.isAuthenticated() && auth.getPrincipal() instanceof UserDetails) {
+                String email = ((UserDetails) auth.getPrincipal()).getUsername();
+                currentUser = userRepository.findByEmail(email).orElse(null);
+            }
+        } catch (Exception ignored) {
+        }
+
+        // If no authenticated user, leave as anonymous (null) so UI can display
+        // "Anonymous Donor"
 
         Campaign campaign = campaignRepository.findById(request.getCampaignId())
                 .orElseThrow(() -> new RuntimeException("Campaign not found"));
@@ -53,10 +65,40 @@ public class DonationService {
         return savedDonation;
     }
 
+    public Donation makeDonationForUser(User user, DonationRequest request) {
+        Campaign campaign = campaignRepository.findById(request.getCampaignId())
+                .orElseThrow(() -> new RuntimeException("Campaign not found"));
+
+        if (!campaign.isActive()) {
+            throw new RuntimeException("Campaign is not active");
+        }
+
+        Donation donation = new Donation(user, campaign, request.getAmount());
+        donation.setPaymentStatus(Donation.PaymentStatus.PAID);
+        Donation savedDonation = donationRepository.save(donation);
+
+        campaign.setCurrentAmount(campaign.getCurrentAmount().add(request.getAmount()));
+        campaignRepository.save(campaign);
+
+        return savedDonation;
+    }
+
     public List<Donation> getUserDonations() {
-        // For now, use a default user since we removed JWT authentication
-        User currentUser = userRepository.findByEmail("user@fundapp.com")
-                .orElseThrow(() -> new RuntimeException("Default user not found"));
+        // Return only the authenticated user's donations
+        User currentUser = null;
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.isAuthenticated() && auth.getPrincipal() instanceof UserDetails) {
+                String email = ((UserDetails) auth.getPrincipal()).getUsername();
+                currentUser = userRepository.findByEmail(email).orElse(null);
+            }
+        } catch (Exception ignored) {
+        }
+
+        if (currentUser == null) {
+            // Unauthenticated -> no personal donations
+            return java.util.Collections.emptyList();
+        }
 
         return donationRepository.findByUserOrderByDonatedAtDesc(currentUser);
     }
@@ -66,11 +108,15 @@ public class DonationService {
     }
 
     public BigDecimal getTotalDonationsAmount() {
-        BigDecimal total = donationRepository.getTotalDonationsAmount();
-        return total != null ? total : BigDecimal.ZERO;
+        return donationRepository.findAll().stream()
+                .filter(d -> d.getPaymentStatus() == Donation.PaymentStatus.PAID)
+                .map(Donation::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     public long getTotalDonationsCount() {
-        return donationRepository.countTotalDonations();
+        return donationRepository.findAll().stream()
+                .filter(d -> d.getPaymentStatus() == Donation.PaymentStatus.PAID)
+                .count();
     }
 }

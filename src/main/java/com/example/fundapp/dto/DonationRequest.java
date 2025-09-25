@@ -8,7 +8,7 @@ import jakarta.validation.constraints.Positive;
 public class DonationRequest {
 
     @NotNull
-    private Long campaignId;
+    private String campaignId;
 
     @NotNull
     @Positive
@@ -17,16 +17,16 @@ public class DonationRequest {
     public DonationRequest() {
     }
 
-    public DonationRequest(Long campaignId, BigDecimal amount) {
+    public DonationRequest(String campaignId, BigDecimal amount) {
         this.campaignId = campaignId;
         this.amount = amount;
     }
 
-    public Long getCampaignId() {
+    public String getCampaignId() {
         return campaignId;
     }
 
-    public void setCampaignId(Long campaignId) {
+    public void setCampaignId(String campaignId) {
         this.campaignId = campaignId;
     }
 

@@ -1,11 +1,13 @@
 package com.example.fundapp.controller;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -24,13 +26,14 @@ import com.example.fundapp.dto.UserDto;
 import com.example.fundapp.model.User;
 import com.example.fundapp.repository.UserRepository;
 
-import jakarta.persistence.criteria.Predicate;
 import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/admin/users")
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminUserController {
+
+    private static final Logger log = LoggerFactory.getLogger(AdminUserController.class);
 
     @Autowired
     private UserRepository userRepository;
@@ -68,32 +71,46 @@ public class AdminUserController {
                 : Sort.by(sortParts[0]).descending();
         Pageable pageable = PageRequest.of(page, size, s);
 
-        Specification<User> spec = (root, query, cb) -> {
-            java.util.ArrayList<Predicate> predicates = new java.util.ArrayList<>();
-            if (search != null && !search.isBlank()) {
-                String like = "%" + search.toLowerCase() + "%";
-                predicates.add(cb.or(
-                        cb.like(cb.lower(root.get("name")), like),
-                        cb.like(cb.lower(root.get("email")), like)));
-            }
-            if (role != null && !role.isBlank()) {
-                predicates.add(cb.equal(root.get("role"), User.Role.valueOf(role.toUpperCase())));
-            }
-            return cb.and(predicates.toArray(new Predicate[0]));
-        };
-
-        Page<UserDto> dtos = userRepository.findAll(spec, pageable).map(this::toDto);
+        var all = userRepository.findAll();
+        var filtered = all.stream()
+                .filter(u -> search == null || search.isBlank() ||
+                        u.getName().toLowerCase().contains(search.toLowerCase()) ||
+                        u.getEmail().toLowerCase().contains(search.toLowerCase()))
+                .filter(u -> role == null || role.isBlank() || u.getRole().name().equalsIgnoreCase(role))
+                .sorted((a, b) -> {
+                    int cmp;
+                    String prop = sortParts[0];
+                    switch (prop) {
+                        case "createdAt":
+                            cmp = a.getCreatedAt().compareTo(b.getCreatedAt());
+                            break;
+                        case "name":
+                            cmp = a.getName().compareToIgnoreCase(b.getName());
+                            break;
+                        case "email":
+                            cmp = a.getEmail().compareToIgnoreCase(b.getEmail());
+                            break;
+                        default:
+                            cmp = String.valueOf(a.getId()).compareTo(String.valueOf(b.getId()));
+                    }
+                    return sortParts.length == 2 && sortParts[1].equalsIgnoreCase("asc") ? cmp : -cmp;
+                })
+                .toList();
+        int start = Math.min((int) pageable.getOffset(), filtered.size());
+        int end = Math.min(start + pageable.getPageSize(), filtered.size());
+        Page<UserDto> dtos = new PageImpl<>(filtered.subList(start, end).stream().map(this::toDto).toList(), pageable,
+                filtered.size());
         return ResponseEntity.ok(dtos);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<UserDto> get(@PathVariable Long id) {
+    public ResponseEntity<UserDto> get(@PathVariable String id) {
         return userRepository.findById(id).map(u -> ResponseEntity.ok(toDto(u)))
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<UserDto> update(@PathVariable Long id, @Valid @RequestBody AdminUserRequest req) {
+    public ResponseEntity<UserDto> update(@PathVariable String id, @Valid @RequestBody AdminUserRequest req) {
         return userRepository.findById(id).map(existing -> {
             existing.setName(req.getName());
             existing.setEmail(req.getEmail());
@@ -107,7 +124,7 @@ public class AdminUserController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
+    public ResponseEntity<Void> delete(@PathVariable String id) {
         try {
             if (!userRepository.existsById(id)) {
                 return ResponseEntity.notFound().build();
@@ -142,15 +159,14 @@ public class AdminUserController {
             return ResponseEntity.noContent().build();
 
         } catch (org.springframework.dao.DataIntegrityViolationException e) {
-            System.err.println("Data integrity violation when deleting user " + id + ": " + e.getMessage());
+            log.warn("Data integrity violation when deleting user {}: {}", id, e.getMessage());
             return ResponseEntity.status(409)
                     .header("X-Error-Reason",
                             "Cannot delete user due to database constraints. User may have related data.")
                     .build();
         } catch (Exception e) {
-            // Log the error for debugging
-            System.err.println("Error deleting user with id " + id + ": " + e.getMessage());
-            e.printStackTrace();
+            // Log the error for debugging (without printing stack to console)
+            log.error("Error deleting user with id {}: {}", id, e.getMessage());
             return ResponseEntity.status(500)
                     .header("X-Error-Reason", "Internal server error occurred while deleting user.")
                     .build();
