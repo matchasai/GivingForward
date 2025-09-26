@@ -1,16 +1,15 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="refresh" content="0; url=/index.html" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Redirecting…</title>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redirecting...</title>
     <script>
-      // JS fallback redirect if meta refresh is blocked
-      (function(){ try { window.location.replace('/index.html'); } catch(e) {} })();
+        // Redirect all 404s to index.html for SPA routing
+        window.location.replace('/');
     </script>
-  </head>
-  <body>
-    Redirecting…
-  </body>
-  </html>
+</head>
+<body>
+    <p>Redirecting...</p>
+</body>
+</html>
