@@ -254,7 +254,7 @@ export default function AdminCampaigns() {
             <table className="min-w-full text-sm text-gray-200">
               <thead>
                 <tr className="text-left">
-                  <th className="p-2">ID</th>
+                  <th className="p-2">S.No</th>
                   <th className="p-2">Title</th>
                   <th className="p-2">Active</th>
                   <th className="p-2">Raised</th>
@@ -263,9 +263,9 @@ export default function AdminCampaigns() {
                 </tr>
               </thead>
               <tbody>
-                {campaigns.map(c => (
+                {campaigns.map((c, idx) => (
                   <tr key={c.id} className="border-t border-white/10">
-                    <td className="p-2">{c.id}</td>
+                    <td className="p-2">{page * size + idx + 1}</td>
                     <td className="p-2">{c.title}</td>
                     <td className="p-2">{String(c.active)}</td>
                     <td className="p-2">{formatINR(c.currentAmount)}</td>

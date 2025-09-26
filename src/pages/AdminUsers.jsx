@@ -237,7 +237,7 @@ export default function AdminUsers() {
             <table className="min-w-full text-sm text-gray-200">
               <thead>
                 <tr className="text-left">
-                  <th className="p-2">ID</th>
+                  <th className="p-2">S.No</th>
                   <th className="p-2">Name</th>
                   <th className="p-2">Email</th>
                   <th className="p-2">Role</th>
@@ -245,9 +245,9 @@ export default function AdminUsers() {
                 </tr>
               </thead>
               <tbody>
-                {users.map((u) => (
+                {users.map((u, idx) => (
                   <tr key={u.id} className="border-t border-white/10">
-                    <td className="p-2">{u.id}</td>
+                    <td className="p-2">{page * size + idx + 1}</td>
                     <td className="p-2">{u.name}</td>
                     <td className="p-2">{u.email}</td>
                     <td className="p-2">{u.role}</td>
