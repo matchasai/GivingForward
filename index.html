@@ -10,6 +10,22 @@
     <div id="root"></div>
     <!-- Razorpay Checkout script -->
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script>
+      // If redirected from 404.html with ?p=..., restore original path before app mounts
+      (function(){
+        try {
+          var usp = new URLSearchParams(window.location.search);
+          var p = usp.get('p');
+          if (p) {
+            var decoded = decodeURIComponent(p);
+            // Only adjust history if we are currently at /index.html?p=...
+            if (window.location.pathname.endsWith('/index.html')) {
+              window.history.replaceState({}, '', decoded);
+            }
+          }
+        } catch (e) {}
+      })();
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html> 

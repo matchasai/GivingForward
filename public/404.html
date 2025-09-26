@@ -1,15 +1,22 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Redirecting...</title>
-    <script>
-        // Redirect all 404s to index.html for SPA routing
-        window.location.replace('/');
-    </script>
-</head>
-<body>
-    <p>Redirecting...</p>
-</body>
-</html>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Redirecting…</title>
+        <script>
+            (function(){
+                try {
+                    var l = window.location;
+                    // Preserve the original path, query, and hash when redirecting to index.html
+                    var p = encodeURIComponent(l.pathname + l.search + l.hash);
+                    window.location.replace('/index.html?p=' + p);
+                } catch (e) {
+                    // As a last resort, fall back to index
+                    window.location.replace('/index.html');
+                }
+            })();
+        </script>
+    </head>
+    <body>Redirecting…</body>
+    </html>
