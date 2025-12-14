@@ -57,11 +57,17 @@ public class SecurityConfig {
                         .anyRequest().authenticated())
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((request, response, authException) -> {
-                            // Return 401 for unauthenticated requests instead of default 403 to trigger
-                            // frontend refresh flow
+                            // Return a JSON 401 response for unauthenticated requests so the
+                            // frontend gets a consistent error payload it can parse/display.
                             response.setStatus(401);
                             response.setHeader("X-Error-Reason", "unauthenticated");
                             response.setHeader("WWW-Authenticate", "Bearer realm=\"api\"");
+                            response.setContentType("application/json;charset=UTF-8");
+                            try {
+                                String body = "{\"message\":\"Unauthenticated: authentication required\",\"error\":\"unauthenticated\"}";
+                                response.getWriter().write(body);
+                            } catch (Exception ignored) {
+                            }
                         }))
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .addFilterBefore(jwtAuthenticationFilter(),

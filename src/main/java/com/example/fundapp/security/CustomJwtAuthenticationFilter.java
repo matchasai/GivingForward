@@ -59,10 +59,16 @@ public class CustomJwtAuthenticationFilter extends OncePerRequestFilter {
                 // authentication set
             } else if (StringUtils.hasText(jwt)) {
                 // Token was provided but is invalid/expired -> signal client to refresh
-                // invalid/expired token; return 401
+                // invalid/expired token; return 401 with JSON body to help the frontend
                 response.setStatus(401);
                 response.setHeader("X-Error-Reason", "invalid-token");
                 response.setHeader("WWW-Authenticate", "Bearer error=invalid_token");
+                response.setContentType("application/json;charset=UTF-8");
+                try {
+                    String body = "{\"message\":\"Invalid or expired token\",\"error\":\"invalid-token\"}";
+                    response.getWriter().write(body);
+                } catch (Exception ignored) {
+                }
                 return;
             }
         } catch (Exception e) {
@@ -78,7 +84,10 @@ public class CustomJwtAuthenticationFilter extends OncePerRequestFilter {
                 requestURI.startsWith("/api/public/") ||
                 requestURI.startsWith("/api/test/") ||
                 requestURI.equals("/api/campaigns/active") ||
-                requestURI.startsWith("/uploads/");
+                requestURI.startsWith("/uploads/") ||
+                // Allow public access to campaign list/details and donations by campaign
+                requestURI.startsWith("/api/campaigns") ||
+                requestURI.startsWith("/api/donations/campaign/");
     }
 
     private String getJwtFromRequest(HttpServletRequest request) {
