@@ -28,13 +28,17 @@ public class StartupConfigLogger {
                 hostPart = hostPart.replaceFirst("^mongodb(\\+srv)?:\\/\\/(?:\\*\\*\\*\\*:\\*\\*\\*\\*@)?", "");
                 // keep only hosts (before first '/' or '?')
                 int slash = hostPart.indexOf('/');
-                if (slash >= 0) hostPart = hostPart.substring(0, slash);
+                if (slash >= 0)
+                    hostPart = hostPart.substring(0, slash);
                 int q = hostPart.indexOf('?');
-                if (q >= 0) hostPart = hostPart.substring(0, q);
+                if (q >= 0)
+                    hostPart = hostPart.substring(0, q);
 
                 log.info("MongoDB config: hosts={}, database={}, source={}", hostPart, db, source);
             } else {
-                log.warn("MongoDB config: no spring.data.mongodb.uri resolved; defaulting to localhost:27017 (source={})", source);
+                log.warn(
+                        "MongoDB config: no spring.data.mongodb.uri resolved; defaulting to localhost:27017 (source={})",
+                        source);
             }
         };
     }

@@ -51,7 +51,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/donations/campaign/**").permitAll()
                         .requestMatchers("/api/campaigns/active").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/campaigns").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/campaigns/{id}").permitAll()
+                        // Allow public GET access to individual campaign details (use Ant-style pattern)
+                        .requestMatchers(HttpMethod.GET, "/api/campaigns/**").permitAll()
                         .requestMatchers("/uploads/**").permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(ex -> ex

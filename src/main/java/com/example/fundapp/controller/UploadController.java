@@ -19,6 +19,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import jakarta.servlet.http.HttpServletRequest;
+
 @RestController
 @RequestMapping("/api/uploads")
 public class UploadController {
@@ -28,8 +30,8 @@ public class UploadController {
 
     @PostMapping("/image")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Map<String, Object>> uploadImage(@RequestParam("file") MultipartFile file)
-            throws IOException {
+    public ResponseEntity<Map<String, Object>> uploadImage(@RequestParam("file") MultipartFile file,
+            HttpServletRequest request) throws IOException {
         if (file.isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
@@ -51,7 +53,22 @@ public class UploadController {
         Path target = dir.resolve(filename);
         Files.copy(file.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
 
-        String url = "/uploads/" + filename;
+        // Build an absolute URL so frontend can load images even when served from a
+        // different origin.
+        String scheme = request.getScheme(); // http or https
+        String serverName = request.getServerName(); // host
+        int serverPort = request.getServerPort();
+        String contextPath = request.getContextPath() == null ? "" : request.getContextPath();
+
+        StringBuilder base = new StringBuilder();
+        base.append(scheme).append("://").append(serverName);
+        // Append port if non-standard (80 for http, 443 for https)
+        if ((scheme.equals("http") && serverPort != 80) || (scheme.equals("https") && serverPort != 443)) {
+            base.append(":" + serverPort);
+        }
+        base.append(contextPath);
+
+        String url = base.toString() + "/uploads/" + filename;
         Map<String, Object> body = new HashMap<>();
         body.put("url", url);
         return ResponseEntity.ok(body);

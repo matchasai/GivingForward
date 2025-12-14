@@ -117,9 +117,17 @@ public class PaymentController {
                     "message", "Razorpay keys not configured on server",
                     "hint", "Set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in backend environment and restart"));
         }
-        if (body == null || body.campaignId == null || body.amount == null
-                || body.amount.compareTo(BigDecimal.ZERO) <= 0) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Invalid campaign or amount"));
+        if (body == null) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Missing request body"));
+        }
+        if (body.campaignId == null || body.campaignId.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Missing campaignId"));
+        }
+        if (body.amount == null) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Missing amount"));
+        }
+        if (body.amount.compareTo(BigDecimal.ZERO) <= 0) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Amount must be greater than 0"));
         }
 
         // Razorpay requires minimum amount of 100 paise (INR 1.00)
@@ -141,7 +149,10 @@ public class PaymentController {
 
         String json = objectMapper.writeValueAsString(orderPayload);
 
-        String auth = razorpayKeyId + ":" + razorpayKeySecret;
+        // Trim keys to avoid accidental whitespace from environment
+        String keyId = razorpayKeyId != null ? razorpayKeyId.trim() : "";
+        String keySecret = razorpayKeySecret != null ? razorpayKeySecret.trim() : "";
+        String auth = keyId + ":" + keySecret;
         String basicAuth = "Basic " + Base64.getEncoder().encodeToString(auth.getBytes(StandardCharsets.UTF_8));
 
         HttpClient client = HttpClient.newHttpClient();
@@ -161,7 +172,7 @@ public class PaymentController {
                 result.put("orderId", node.get("id").asText());
                 result.put("amount", node.get("amount").asLong()); // paise
                 result.put("currency", node.get("currency").asText());
-                result.put("key", razorpayKeyId); // public key to use on client
+                result.put("key", keyId); // public key to use on client
                 return ResponseEntity.ok(result);
             } else {
                 // Log diagnostic details
@@ -185,7 +196,9 @@ public class PaymentController {
     @PostMapping("/verify")
     public ResponseEntity<?> verify(@RequestBody VerifyRequest body,
             @RequestHeader(value = "Authorization", required = false) String authorization) throws Exception {
-        if (razorpayKeySecret == null || razorpayKeySecret.isBlank()) {
+        // Use trimmed secret for verification to avoid whitespace issues
+        String secretTrimmed = razorpayKeySecret != null ? razorpayKeySecret.trim() : null;
+        if (secretTrimmed == null || secretTrimmed.isBlank()) {
             return ResponseEntity.status(500).body(Map.of("message", "Razorpay secret not configured on server"));
         }
         if (body == null || body.campaignId == null || body.amount == null ||
@@ -213,9 +226,17 @@ public class PaymentController {
         }
 
         String payload = body.razorpayOrderId + "|" + body.razorpayPaymentId;
-        String expectedSignature = hmacSha256Hex(payload, razorpayKeySecret);
+        String expectedSignature = hmacSha256Hex(payload, secretTrimmed);
 
-        if (!expectedSignature.equals(body.razorpaySignature)) {
+        // Normalize and use constant-time comparison to avoid timing attacks and
+        // case/whitespace
+        String incoming = body.razorpaySignature != null ? body.razorpaySignature.trim().toLowerCase() : "";
+        String expected = expectedSignature != null ? expectedSignature.trim().toLowerCase() : "";
+        boolean matches = java.security.MessageDigest.isEqual(expected.getBytes(StandardCharsets.UTF_8),
+                incoming.getBytes(StandardCharsets.UTF_8));
+
+        if (!matches) {
+            log.warn("Payment verification failed for order={} (signature mismatch)", body.razorpayOrderId);
             return ResponseEntity.status(400).body(Map.of("message", "Signature mismatch"));
         }
 
