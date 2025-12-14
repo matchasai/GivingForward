@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import { Link } from 'react-router-dom'
 import { formatINR } from '../utils/currency'
+import { getImageUrl } from '../utils/getImageUrl'
 
 const Campaigns = () => {
   const [campaigns, setCampaigns] = useState([])
@@ -72,7 +73,7 @@ const Campaigns = () => {
             {campaign.imageUrl && (
               <div className="relative overflow-hidden">
                 <img
-                  src={campaign.imageUrl}
+                  src={getImageUrl(campaign.imageUrl)}
                   alt={campaign.title}
                   className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-300"
                 />

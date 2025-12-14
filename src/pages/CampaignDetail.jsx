@@ -6,6 +6,7 @@ import toast from 'react-hot-toast'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { formatINR } from '../utils/currency'
+import { getImageUrl } from '../utils/getImageUrl'
 
 const CampaignDetail = () => {
   const { id } = useParams()
@@ -179,7 +180,7 @@ const CampaignDetail = () => {
               {campaign.imageUrl && (
                 <div className="mb-6 overflow-hidden rounded-lg">
                   <img
-                    src={campaign.imageUrl}
+                    src={getImageUrl(campaign.imageUrl)}
                     alt={campaign.title}
                     className="w-full h-80 object-cover"
                     onError={(e) => {

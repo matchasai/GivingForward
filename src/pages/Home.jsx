@@ -4,6 +4,7 @@ import { ArrowRight, Heart, IndianRupee, Target, Users } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { formatINR } from '../utils/currency'
+import { getImageUrl } from '../utils/getImageUrl'
 
 const Home = () => {
   const [campaigns, setCampaigns] = useState([])
@@ -135,7 +136,7 @@ const Home = () => {
                 {campaign.imageUrl && (
                   <div className="relative">
                     <img
-                      src={campaign.imageUrl}
+                      src={getImageUrl(campaign.imageUrl)}
                       alt={campaign.title}
                       className="w-full h-48 object-cover"
                       style={{ borderTopLeftRadius: '1rem', borderTopRightRadius: '1rem' }}
