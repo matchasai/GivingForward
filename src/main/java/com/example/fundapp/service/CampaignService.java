@@ -1,19 +1,21 @@
 package com.example.fundapp.service;
 
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import java.math.BigDecimal;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +23,7 @@ import com.example.fundapp.constants.AppConstants;
 import com.example.fundapp.dto.CampaignDto;
 import com.example.fundapp.dto.CampaignRequest;
 import com.example.fundapp.model.Campaign;
+import com.example.fundapp.model.CampaignUpdate;
 import com.example.fundapp.model.Donation;
 import com.example.fundapp.model.User;
 import com.example.fundapp.repository.CampaignRepository;
@@ -92,6 +95,9 @@ public class CampaignService {
             campaign.setDescription(request.getDescription());
             campaign.setTargetAmount(request.getTargetAmount());
             campaign.setImageUrl(request.getImageUrl());
+            // Persist category and end date
+            campaign.setCategory(request.getCategory());
+            campaign.setEndDate(request.getEndDate());
             campaign.setCreatedBy(currentUser);
 
             Campaign savedCampaign = campaignRepository.save(campaign);
@@ -116,6 +122,11 @@ public class CampaignService {
         if (request.getImageUrl() != null) {
             campaign.setImageUrl(request.getImageUrl());
         }
+        // Update category and end date when provided
+        if (request.getCategory() != null) {
+            campaign.setCategory(request.getCategory());
+        }
+        campaign.setEndDate(request.getEndDate());
 
         return campaignRepository.save(campaign);
     }
@@ -152,27 +163,27 @@ public class CampaignService {
             Pageable pageable,
             String search,
             Boolean active) {
-        
+
         List<Campaign> allCampaigns = campaignRepository.findAll();
-        
+
         // Apply filters
         List<Campaign> filtered = allCampaigns.stream()
                 .filter(c -> search == null || search.isBlank()
                         || c.getTitle().toLowerCase().contains(search.toLowerCase()))
                 .filter(c -> active == null || c.isActive() == active)
                 .toList();
-        
+
         // Apply pagination
         int start = Math.min((int) pageable.getOffset(), filtered.size());
         int end = Math.min(start + pageable.getPageSize(), filtered.size());
-        
+
         List<CampaignDto> campaignDtos = filtered.subList(start, end).stream()
                 .map(this::convertToDto)
                 .toList();
-        
+
         return new PageImpl<>(campaignDtos, pageable, filtered.size());
     }
-    
+
     private CampaignDto convertToDto(Campaign c) {
         return new CampaignDto(
                 c.getId(),
@@ -190,37 +201,35 @@ public class CampaignService {
     public Map<String, Object> getCampaignAnalytics(String campaignId) {
         Campaign campaign = campaignRepository.findById(campaignId)
                 .orElseThrow(() -> new RuntimeException("Campaign not found"));
-        
+
         var donations = donationRepository.findByCampaign_Id(campaignId);
-        
+
         // Calculate statistics
         long totalDonations = donations.size();
         BigDecimal totalAmount = donations.stream()
                 .map(d -> d.getAmount())
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-        
-        BigDecimal avgDonation = totalDonations > 0 
+
+        BigDecimal avgDonation = totalDonations > 0
                 ? totalAmount.divide(BigDecimal.valueOf(totalDonations), 2, java.math.RoundingMode.HALF_UP)
                 : BigDecimal.ZERO;
-        
+
         // Group donations by date for chart
         var donationsByDate = donations.stream()
                 .collect(Collectors.groupingBy(
                         d -> d.getDonatedAt().toLocalDate(),
-                        Collectors.reducing(BigDecimal.ZERO, 
-                                Donation::getAmount, 
-                                BigDecimal::add)
-                ));
-        
+                        Collectors.reducing(BigDecimal.ZERO,
+                                Donation::getAmount,
+                                BigDecimal::add)));
+
         // Convert to list of maps for frontend
         var chartData = donationsByDate.entrySet().stream()
                 .sorted(Map.Entry.comparingByKey())
                 .map(entry -> Map.of(
                         "date", entry.getKey().toString(),
-                        "amount", entry.getValue()
-                ))
+                        "amount", entry.getValue()))
                 .collect(Collectors.toList());
-        
+
         return Map.of(
                 "totalDonations", totalDonations,
                 "totalAmount", totalAmount,
@@ -232,7 +241,46 @@ public class CampaignService {
                                 .divide(campaign.getTargetAmount(), 4, java.math.RoundingMode.HALF_UP)
                                 .multiply(BigDecimal.valueOf(100))
                         : BigDecimal.ZERO,
-                "chartData", chartData
-        );
+                "chartData", chartData);
+    }
+
+    /**
+     * Add an admin update to a campaign
+     */
+    public List<CampaignUpdate> addCampaignUpdate(String campaignId, String text, String imageUrl) {
+        Campaign campaign = campaignRepository.findById(campaignId)
+                .orElseThrow(() -> new RuntimeException("Campaign not found"));
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String authorName = "Admin";
+        if (authentication != null && authentication.getName() != null
+                && !authentication.getName().equals("anonymousUser")) {
+            authorName = authentication.getName();
+        }
+
+        CampaignUpdate update = new CampaignUpdate(text, imageUrl, authorName);
+        if (campaign.getUpdates() == null) {
+            campaign.setUpdates(new ArrayList<>());
+        }
+        campaign.getUpdates().add(update);
+        campaignRepository.save(campaign);
+
+        return campaign.getUpdates().stream()
+                .sorted(Comparator.comparing(CampaignUpdate::getCreatedAt).reversed())
+                .toList();
+    }
+
+    /**
+     * Get campaign updates in reverse chronological order
+     */
+    public List<CampaignUpdate> getCampaignUpdates(String campaignId) {
+        Campaign campaign = campaignRepository.findById(campaignId)
+                .orElseThrow(() -> new RuntimeException("Campaign not found"));
+        List<CampaignUpdate> updates = campaign.getUpdates();
+        if (updates == null)
+            return List.of();
+        return updates.stream()
+                .sorted(Comparator.comparing(CampaignUpdate::getCreatedAt).reversed())
+                .toList();
     }
 }

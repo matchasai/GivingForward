@@ -26,12 +26,12 @@ public final class AppConstants {
 
     // File Upload
     public static final long MAX_FILE_SIZE_BYTES = 10485760L; // 10MB
-    public static final String[] ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/gif", "image/webp"};
+    public static final String[] ALLOWED_IMAGE_TYPES = { "image/jpeg", "image/png", "image/gif", "image/webp" };
 
     // Email
     public static final String DEFAULT_MAIL_HOST = "smtp.gmail.com";
     public static final int DEFAULT_MAIL_PORT = 587;
-    
+
     // Razorpay
     public static final String CURRENCY_INR = "INR";
     public static final long RAZORPAY_MIN_AMOUNT_PAISE = 100L; // INR 1.00

@@ -22,17 +22,20 @@ public class NotificationService {
     }
 
     public List<Notification> getUserNotifications(User user) {
-        if (user == null) return List.of();
+        if (user == null)
+            return List.of();
         return notificationRepository.findByUserOrderByCreatedAtDesc(user);
     }
 
     public List<Notification> getUnreadNotifications(User user) {
-        if (user == null) return List.of();
+        if (user == null)
+            return List.of();
         return notificationRepository.findByUserAndReadOrderByCreatedAtDesc(user, false);
     }
 
     public long getUnreadCount(User user) {
-        if (user == null) return 0L;
+        if (user == null)
+            return 0L;
         return notificationRepository.countByUserAndRead(user, false);
     }
 
@@ -44,7 +47,8 @@ public class NotificationService {
     }
 
     public void markAllAsRead(User user) {
-        if (user == null) return;
+        if (user == null)
+            return;
         List<Notification> notifications = notificationRepository.findByUserAndReadOrderByCreatedAtDesc(user, false);
         notifications.forEach(n -> n.setRead(true));
         notificationRepository.saveAll(notifications);
@@ -55,7 +59,8 @@ public class NotificationService {
     }
 
     public void deleteAllUserNotifications(User user) {
-        if (user == null) return;
+        if (user == null)
+            return;
         notificationRepository.deleteByUser(user);
     }
 

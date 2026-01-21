@@ -37,7 +37,7 @@ public class UserAccountService {
     public User updateProfile(User user, UpdateProfileRequest request) {
         if (user == null)
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Not authenticated");
-        
+
         // Check if email is already taken by another user
         if (!user.getEmail().equals(request.getEmail())) {
             userRepository.findByEmail(request.getEmail()).ifPresent(existingUser -> {
@@ -60,7 +60,7 @@ public class UserAccountService {
         }
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
-        
+
         // Notify user about password change
         notificationService.notifyPasswordChanged(user);
     }

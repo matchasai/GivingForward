@@ -72,10 +72,10 @@ public class AuthService {
         user.setEmailVerified(false);
         user.setEmailVerificationToken(UUID.randomUUID().toString());
         User savedUser = userRepository.save(user);
-        
+
         // Send verification email
         emailService.sendVerificationEmail(savedUser.getEmail(), savedUser.getEmailVerificationToken());
-        
+
         String jwt = tokenProvider.generateToken(savedUser);
         RefreshToken rt = createRefreshToken(savedUser);
         return new AuthResponse(jwt, savedUser.getId(), savedUser.getName(), savedUser.getEmail(),
@@ -87,7 +87,7 @@ public class AuthService {
                 .filter(u -> token.equals(u.getEmailVerificationToken()))
                 .findFirst()
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid verification token"));
-        
+
         user.setEmailVerified(true);
         user.setEmailVerificationToken(null);
         userRepository.save(user);
@@ -96,16 +96,16 @@ public class AuthService {
     public void resendVerificationEmail(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, AppConstants.MSG_USER_NOT_FOUND));
-        
+
         if (user.isEmailVerified()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, AppConstants.MSG_EMAIL_VERIFIED);
         }
-        
+
         if (user.getEmailVerificationToken() == null) {
             user.setEmailVerificationToken(UUID.randomUUID().toString());
             userRepository.save(user);
         }
-        
+
         emailService.sendVerificationEmail(user.getEmail(), user.getEmailVerificationToken());
     }
 

@@ -1,5 +1,8 @@
 package com.example.fundapp.controller;
 
+import java.io.IOException;
+import java.io.PrintWriter;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,16 +24,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import jakarta.servlet.http.HttpServletResponse;
-
-import java.io.IOException;
-import java.io.PrintWriter;
-
 import com.example.fundapp.dto.AdminUserRequest;
 import com.example.fundapp.dto.UserDto;
 import com.example.fundapp.model.User;
 import com.example.fundapp.repository.UserRepository;
 
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 
 @RestController
@@ -186,19 +185,17 @@ public class AdminUserController {
     public void exportUsersToCSV(HttpServletResponse response) throws IOException {
         response.setContentType("text/csv");
         response.setHeader("Content-Disposition", "attachment; filename=\"users_export.csv\"");
-        
-        PrintWriter writer = response.getWriter();
-        writer.println("ID,Name,Email,Role,Created At");
-        
-        userRepository.findAll().forEach(user -> {
-            writer.printf("\"%s\",\"%s\",\"%s\",\"%s\",\"%s\"%n",
-                    user.getId(),
-                    user.getName().replace("\"", "\"\""),
-                    user.getEmail().replace("\"", "\"\""),
-                    user.getRole().name(),
-                    user.getCreatedAt().toString());
-        });
-        
-        writer.flush();
+        try (PrintWriter writer = response.getWriter()) {
+            writer.println("ID,Name,Email,Role,Created At");
+            userRepository.findAll().forEach(user -> {
+                String name = user.getName() == null ? "" : user.getName().replace("\"", "\"\"");
+                String email = user.getEmail() == null ? "" : user.getEmail().replace("\"", "\"\"");
+                String role = user.getRole() == null ? "" : user.getRole().name();
+                String createdAt = user.getCreatedAt() == null ? "" : user.getCreatedAt().toString();
+                writer.printf("\"%s\",\"%s\",\"%s\",\"%s\",\"%s\"%n",
+                        user.getId(), name, email, role, createdAt);
+            });
+        }
     }
+
 }

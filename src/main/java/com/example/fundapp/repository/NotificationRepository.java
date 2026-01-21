@@ -11,10 +11,10 @@ import com.example.fundapp.model.User;
 @Repository
 public interface NotificationRepository extends MongoRepository<Notification, String> {
     List<Notification> findByUserOrderByCreatedAtDesc(User user);
-    
+
     List<Notification> findByUserAndReadOrderByCreatedAtDesc(User user, boolean read);
-    
+
     long countByUserAndRead(User user, boolean read);
-    
+
     void deleteByUser(User user);
 }

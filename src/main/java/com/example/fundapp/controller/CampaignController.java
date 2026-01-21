@@ -6,7 +6,6 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -25,7 +24,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.fundapp.dto.CampaignDto;
 import com.example.fundapp.dto.CampaignRequest;
+import com.example.fundapp.dto.CampaignUpdateRequest;
 import com.example.fundapp.model.Campaign;
+import com.example.fundapp.model.CampaignUpdate;
 import com.example.fundapp.repository.CampaignRepository;
 import com.example.fundapp.service.CampaignService;
 
@@ -115,5 +116,25 @@ public class CampaignController {
     public ResponseEntity<Map<String, Object>> getCampaignAnalytics(@PathVariable String id) {
         Map<String, Object> analytics = campaignService.getCampaignAnalytics(id);
         return ResponseEntity.ok(analytics);
+    }
+
+    /**
+     * Admin: Add an update to a campaign
+     */
+    @PostMapping("/{id}/updates")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<CampaignUpdate>> addUpdate(@PathVariable String id,
+            @Valid @RequestBody CampaignUpdateRequest request) {
+        List<CampaignUpdate> updates = campaignService.addCampaignUpdate(id, request.getText(), request.getImageUrl());
+        return ResponseEntity.ok(updates);
+    }
+
+    /**
+     * Get updates timeline for a campaign
+     */
+    @GetMapping("/{id}/updates")
+    public ResponseEntity<List<CampaignUpdate>> getUpdates(@PathVariable String id) {
+        List<CampaignUpdate> updates = campaignService.getCampaignUpdates(id);
+        return ResponseEntity.ok(updates);
     }
 }

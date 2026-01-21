@@ -3,6 +3,8 @@ package com.example.fundapp.model;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.DBRef;
@@ -37,12 +39,18 @@ public class Campaign {
 
     private String imageUrl;
 
+    private String category; // Medical, Education, Disaster Relief, Community, Other
+
+    private LocalDateTime endDate; // Optional campaign end date
+
     @DBRef(lazy = true)
     private User createdBy;
 
     private LocalDateTime createdAt = LocalDateTime.now();
 
     private boolean isActive = true;
+
+    private List<CampaignUpdate> updates = new ArrayList<>();
 
     // Constructors
     public Campaign() {
@@ -104,6 +112,22 @@ public class Campaign {
         this.imageUrl = imageUrl;
     }
 
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
+    }
+
+    public LocalDateTime getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(LocalDateTime endDate) {
+        this.endDate = endDate;
+    }
+
     public User getCreatedBy() {
         return createdBy;
     }
@@ -128,6 +152,14 @@ public class Campaign {
         isActive = active;
     }
 
+    public List<CampaignUpdate> getUpdates() {
+        return updates;
+    }
+
+    public void setUpdates(List<CampaignUpdate> updates) {
+        this.updates = updates;
+    }
+
     // Helper methods
     public BigDecimal getProgressPercentage() {
         if (targetAmount.compareTo(BigDecimal.ZERO) == 0) {
@@ -139,5 +171,9 @@ public class Campaign {
 
     public boolean isFullyFunded() {
         return currentAmount.compareTo(targetAmount) >= 0;
+    }
+
+    public boolean isEnded() {
+        return endDate != null && LocalDateTime.now().isAfter(endDate);
     }
 }

@@ -23,7 +23,8 @@ public class GlobalExceptionHandler {
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, Object>> handleValidation(MethodArgumentNotValidException ex, WebRequest request) {
+    public ResponseEntity<Map<String, Object>> handleValidation(MethodArgumentNotValidException ex,
+            WebRequest request) {
         Map<String, Object> body = new HashMap<>();
         Map<String, String> errors = new HashMap<>();
         for (FieldError fe : ex.getBindingResult().getFieldErrors()) {
@@ -35,7 +36,7 @@ public class GlobalExceptionHandler {
         body.put("message", "Input validation failed");
         body.put("details", errors);
         body.put("path", request.getDescription(false).replace("uri=", ""));
-        
+
         log.warn("Validation error: {}", errors);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
@@ -48,7 +49,7 @@ public class GlobalExceptionHandler {
         body.put("error", ex.getStatusCode().toString());
         body.put("message", ex.getReason() != null ? ex.getReason() : "Request failed");
         body.put("path", request.getDescription(false).replace("uri=", ""));
-        
+
         log.warn("Response status exception: {} - {}", ex.getStatusCode(), ex.getReason());
         return ResponseEntity.status(ex.getStatusCode()).body(body);
     }
@@ -61,7 +62,7 @@ public class GlobalExceptionHandler {
         body.put("error", "Forbidden");
         body.put("message", "Access denied - insufficient permissions");
         body.put("path", request.getDescription(false).replace("uri=", ""));
-        
+
         log.warn("Access denied: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(body);
     }
@@ -74,7 +75,7 @@ public class GlobalExceptionHandler {
         body.put("error", "Unauthorized");
         body.put("message", "Authentication failed");
         body.put("path", request.getDescription(false).replace("uri=", ""));
-        
+
         log.warn("Authentication failed: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(body);
     }
@@ -87,7 +88,7 @@ public class GlobalExceptionHandler {
         body.put("error", "Bad Request");
         body.put("message", ex.getMessage() != null ? ex.getMessage() : "Invalid argument");
         body.put("path", request.getDescription(false).replace("uri=", ""));
-        
+
         log.warn("Illegal argument: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
@@ -100,7 +101,7 @@ public class GlobalExceptionHandler {
         body.put("error", "Internal Server Error");
         body.put("message", "An unexpected error occurred");
         body.put("path", request.getDescription(false).replace("uri=", ""));
-        
+
         log.error("Runtime exception: {}", ex.getMessage(), ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
     }
@@ -113,16 +114,8 @@ public class GlobalExceptionHandler {
         body.put("error", "Internal Server Error");
         body.put("message", "An unexpected error occurred");
         body.put("path", request.getDescription(false).replace("uri=", ""));
-        
+
         log.error("Unhandled exception: {}", ex.getMessage(), ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
     }
 }
-
-
-
-
-
-
-
-

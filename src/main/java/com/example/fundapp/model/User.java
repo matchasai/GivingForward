@@ -1,18 +1,19 @@
 package com.example.fundapp.model;
 
+import java.time.LocalDateTime;
+import java.util.Collection;
+import java.util.List;
+
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import java.time.LocalDateTime;
-import java.util.Collection;
-import java.util.List;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 @Document(collection = "users")
 public class User implements UserDetails {
@@ -35,10 +36,9 @@ public class User implements UserDetails {
 
     private Role role = Role.USER;
 
-    private boolean notificationsEnabled = true;
-    
+    private boolean notificationsEnabled = false;
     private boolean emailVerified = false;
-    
+
     private String emailVerificationToken;
 
     private LocalDateTime createdAt = LocalDateTime.now();

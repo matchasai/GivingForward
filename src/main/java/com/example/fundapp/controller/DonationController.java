@@ -1,5 +1,7 @@
 package com.example.fundapp.controller;
 
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,10 +12,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -23,10 +23,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
-import jakarta.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.io.PrintWriter;
-
 import com.example.fundapp.dto.DonationDto;
 import com.example.fundapp.dto.DonationRequest;
 import com.example.fundapp.model.Donation;
@@ -34,6 +30,7 @@ import com.example.fundapp.repository.DonationRepository;
 import com.example.fundapp.service.DonationService;
 import com.example.fundapp.service.ReceiptService;
 
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 
 @RestController
@@ -134,27 +131,26 @@ public class DonationController {
     public void exportDonationsToCSV(HttpServletResponse response) throws IOException {
         response.setContentType("text/csv");
         response.setHeader("Content-Disposition", "attachment; filename=\"donations_export.csv\"");
-        
-        PrintWriter writer = response.getWriter();
-        writer.println("ID,User Name,User Email,Campaign,Amount,Payment Status,Donated At");
-        
-        donationRepository.findAll().forEach(donation -> {
-            String userName = donation.getUser() != null ? donation.getUser().getName() : "Anonymous";
-            String userEmail = donation.getUser() != null ? donation.getUser().getEmail() : "";
-            String campaignTitle = donation.getCampaign() != null ? donation.getCampaign().getTitle() : "";
-            String status = donation.getPaymentStatus() != null ? donation.getPaymentStatus().name() : "";
-            
-            writer.printf("\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\"%n",
-                    donation.getId(),
-                    userName.replace("\"", "\"\""),
-                    userEmail.replace("\"", "\"\""),
-                    campaignTitle.replace("\"", "\"\""),
-                    donation.getAmount().toString(),
-                    status,
-                    donation.getDonatedAt().toString());
-        });
-        
-        writer.flush();
+        try (PrintWriter writer = response.getWriter()) {
+            writer.println("ID,User Name,User Email,Campaign Title,Amount,Status,Donated At");
+            donationRepository.findAll().forEach(donation -> {
+                String userName = donation.getUser() != null && donation.getUser().getName() != null
+                        ? donation.getUser().getName().replace("\"", "\"\"")
+                        : "";
+                String userEmail = donation.getUser() != null && donation.getUser().getEmail() != null
+                        ? donation.getUser().getEmail().replace("\"", "\"\"")
+                        : "";
+                String campaignTitle = donation.getCampaign() != null && donation.getCampaign().getTitle() != null
+                        ? donation.getCampaign().getTitle().replace("\"", "\"\"")
+                        : "";
+                String status = donation.getPaymentStatus() != null ? donation.getPaymentStatus().name() : "";
+                String donatedAt = donation.getDonatedAt() != null ? donation.getDonatedAt().toString() : "";
+                writer.printf("\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\"%n",
+                        donation.getId(), userName, userEmail, campaignTitle,
+                        donation.getAmount() != null ? donation.getAmount().toString() : "",
+                        status, donatedAt);
+            });
+        }
     }
 
     /**
@@ -165,17 +161,13 @@ public class DonationController {
         try {
             Donation donation = donationRepository.findById(id)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Donation not found"));
-            
             byte[] pdfContent = receiptService.generateReceipt(donation);
-            
             HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_PDF);
             headers.setContentDispositionFormData("attachment", "donation-receipt-" + id + ".pdf");
             headers.setCacheControl("must-revalidate, post-check=0, pre-check=0");
-            
             return new ResponseEntity<>(pdfContent, headers, HttpStatus.OK);
         } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, 
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
                     "Failed to generate receipt: " + e.getMessage());
         }
     }

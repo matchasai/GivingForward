@@ -28,7 +28,8 @@ public class UserAccountController {
 
     @GetMapping("/profile")
     public ResponseEntity<UserDto> getProfile(@AuthenticationPrincipal User user) {
-        UserDto userDto = new UserDto(user.getId(), user.getName(), user.getEmail(), user.getRole().name(), user.getCreatedAt());
+        UserDto userDto = new UserDto(user.getId(), user.getName(), user.getEmail(), user.getRole().name(),
+                user.getCreatedAt());
         return ResponseEntity.ok(userDto);
     }
 
@@ -36,7 +37,8 @@ public class UserAccountController {
     public ResponseEntity<UserDto> updateProfile(@AuthenticationPrincipal User user,
             @Valid @RequestBody UpdateProfileRequest request) {
         User updatedUser = userAccountService.updateProfile(user, request);
-        UserDto userDto = new UserDto(updatedUser.getId(), updatedUser.getName(), updatedUser.getEmail(), updatedUser.getRole().name(), updatedUser.getCreatedAt());
+        UserDto userDto = new UserDto(updatedUser.getId(), updatedUser.getName(), updatedUser.getEmail(),
+                updatedUser.getRole().name(), updatedUser.getCreatedAt());
         return ResponseEntity.ok(userDto);
     }
 

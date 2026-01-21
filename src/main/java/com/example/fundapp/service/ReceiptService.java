@@ -52,7 +52,7 @@ public class ReceiptService {
         document.add(orgInfo);
 
         // Receipt details table
-        Table table = new Table(UnitValue.createPercentArray(new float[]{1, 2}))
+        Table table = new Table(UnitValue.createPercentArray(new float[] { 1, 2 }))
                 .useAllAvailableWidth()
                 .setMarginTop(20);
 
