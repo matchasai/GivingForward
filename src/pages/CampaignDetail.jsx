@@ -112,8 +112,20 @@ const CampaignDetail = () => {
       rzp.open()
     } catch (error) {
       console.error('Error initializing payment:', error)
-      const msg = error?.response?.data?.message || 'Failed to initialize payment'
-      const details = error?.response?.data?.details
+      const resData = error?.response?.data
+      // Response body may be JSON { message, details } or a plain string. Handle both.
+      let msg = 'Failed to initialize payment'
+      let details = null
+      if (resData) {
+        if (typeof resData === 'string') {
+          msg = resData
+        } else if (typeof resData === 'object') {
+          msg = resData.message || msg
+          details = resData.details || null
+        }
+      } else if (error?.message) {
+        msg = error.message
+      }
       toast.error(details ? `${msg}: ${details}` : msg)
       setProcessingDonation(false)
     }

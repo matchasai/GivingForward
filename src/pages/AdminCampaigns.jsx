@@ -29,17 +29,7 @@ export default function AdminCampaigns() {
       console.error('Notify failed:', error)
     }
   }
-  // Notify users about campaign
-  const notifyUsers = async (campaignId, campaignTitle) => {
-    try {
-      await axios.post(`/api/campaigns/${campaignId}/notify`)
-      alert(`All users will be notified about campaign: ${campaignTitle}`)
-    } catch (error) {
-      alert('Failed to send notification email to users.')
-      console.error(error)
-    }
-  }
-  // Notify users about campaign
+
   const { user, token } = useAuth()
   const [campaigns, setCampaigns] = useState([])
   const [loading, setLoading] = useState(true)

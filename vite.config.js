@@ -29,6 +29,6 @@ export default defineConfig(({ command }) => ({
   },
   define: command === 'build' ? {
     // Reduce React DevTools message in production only
-    __REACT_DEVTOOLS_GLOBAL_HOOK__: '({ isDisabled: true })'
+    __REACT_DEVTOOLS_GLOBAL_HOOK__: ({ isDisabled: true })
   } : {}
 })) 

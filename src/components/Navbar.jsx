@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 import { BarChart3, Heart, Home, LogOut, User } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import NotificationBell from './NotificationBell'
 
 
 const Navbar = () => {
@@ -32,12 +33,14 @@ const Navbar = () => {
             </Link>
             {user ? (
               <>
+                {user.role === 'USER' && <NotificationBell />}
                 <Link to="/dashboard" className="glass-button flex items-center space-x-2">
                   <User className="w-4 h-4" />
                   <span>Dashboard</span>
                 </Link>
                 {user.role === 'ADMIN' && (
                   <div className="flex items-center gap-2">
+                    <NotificationBell />
                     <Link to="/admin" className="glass-button flex items-center space-x-2">
                       <BarChart3 className="w-4 h-4" />
                       <span>Admin</span>
