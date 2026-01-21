@@ -15,47 +15,51 @@ const Navbar = () => {
   }
 
   return (
-    <motion.nav initial={{ y: -100 }} animate={{ y: 0 }} className="glass-card sticky top-0 z-50">
-      <div className="container mx-auto px-4 py-4">
+    <motion.nav 
+      initial={{ y: -100 }} 
+      animate={{ y: 0 }} 
+      className="bg-white sticky top-0 z-50 border-b border-gray-200 shadow-sm"
+    >
+      <div className="container mx-auto px-4 py-3">
         <div className="flex items-center justify-between">
           <Link to="/" className="flex items-center space-x-2">
-            <Heart className="w-8 h-8 text-pink-400" />
-            <span className="text-2xl font-bold gradient-text">GivingForward</span>
+            <Heart className="w-8 h-8 text-[#2F855A]" fill="#2F855A" />
+            <span className="text-2xl font-bold text-[#1F2937]">GivingForward</span>
           </Link>
-          <div className="flex items-center space-x-4">
-            <Link to="/" className="glass-button flex items-center space-x-2">
+          <div className="flex items-center space-x-2">
+            <Link to="/" className="px-4 py-2 text-gray-700 hover:text-[#2F855A] transition-colors flex items-center space-x-2">
               <Home className="w-4 h-4" />
               <span>Home</span>
             </Link>
-            <Link to="/campaigns" className="glass-button flex items-center space-x-2">
+            <Link to="/campaigns" className="px-4 py-2 text-gray-700 hover:text-[#2F855A] transition-colors flex items-center space-x-2">
               <Heart className="w-4 h-4" />
               <span>Campaigns</span>
             </Link>
             {user ? (
               <>
                 {user.role === 'USER' && <NotificationBell />}
-                <Link to="/dashboard" className="glass-button flex items-center space-x-2">
+                <Link to="/dashboard" className="px-4 py-2 text-gray-700 hover:text-[#2F855A] transition-colors flex items-center space-x-2">
                   <User className="w-4 h-4" />
                   <span>Dashboard</span>
                 </Link>
                 {user.role === 'ADMIN' && (
                   <div className="flex items-center gap-2">
                     <NotificationBell />
-                    <Link to="/admin" className="glass-button flex items-center space-x-2">
+                    <Link to="/admin" className="px-4 py-2 text-gray-700 hover:text-[#2F855A] transition-colors flex items-center space-x-2">
                       <BarChart3 className="w-4 h-4" />
                       <span>Admin</span>
                     </Link>
-                    <Link to="/admin/users" className="glass-button flex items-center space-x-2">
+                    <Link to="/admin/users" className="px-4 py-2 text-gray-700 hover:text-[#2F855A] transition-colors flex items-center space-x-2">
                       <span>Users</span>
                     </Link>
-                    <Link to="/admin/campaigns" className="glass-button flex items-center space-x-2">
+                    <Link to="/admin/campaigns" className="px-4 py-2 text-gray-700 hover:text-[#2F855A] transition-colors flex items-center space-x-2">
                       <span>Campaigns</span>
                     </Link>
                   </div>
                 )}
                 <button
                   onClick={handleLogout}
-                  className="glass-button flex items-center space-x-2 bg-red-500/20 hover:bg-red-500/30"
+                  className="px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors flex items-center space-x-2"
                 >
                   <LogOut className="w-4 h-4" />
                   <span>Logout</span>
@@ -63,10 +67,10 @@ const Navbar = () => {
               </>
             ) : (
               <div className="flex space-x-2">
-                <Link to="/login" className="glass-button">
+                <Link to="/login" className="btn-secondary">
                   Login
                 </Link>
-                <Link to="/register" className="glass-button bg-purple-500/20 hover:bg-purple-500/30">
+                <Link to="/register" className="donate-btn">
                   Register
                 </Link>
               </div>

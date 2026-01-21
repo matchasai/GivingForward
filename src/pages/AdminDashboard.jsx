@@ -32,7 +32,6 @@ const AdminDashboard = () => {
       setUsers(usersResponse.data?.content || [])
       setActivity(activityResponse.data)
     } catch (error) {
-      console.error('Error fetching admin data:', error)
       toast.error('Failed to load admin data')
     } finally {
       setLoading(false)
@@ -41,114 +40,125 @@ const AdminDashboard = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="w-16 h-16 border-4 border-white/20 border-t-white rounded-full animate-spin" />
+      <div className="flex items-center justify-center min-h-screen calm-bg">
+        <div className="w-14 h-14 border-4 border-gray-200 border-t-[#2F855A] rounded-full animate-spin" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen calm-bg section-container">
       <motion.div
-        initial={{ opacity: 0, y: 50 }}
+        initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8 }}
+        transition={{ duration: 0.4 }}
       >
-        <h1 className="text-4xl font-bold text-white mb-8">Admin Dashboard</h1>
+        <div className="mb-8">
+          <p className="text-sm font-semibold text-[#2F855A]">Admin overview</p>
+          <h1 className="text-4xl font-bold text-[#1F2937]">Dashboard</h1>
+          <p className="text-[#6B7280] mt-2">Monitor campaigns, donations, and user activity.</p>
+        </div>
 
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Sidebar */}
+          <div className="lg:col-span-1 hidden lg:block">
+            <div className="trust-card p-4 sticky top-24">
+              <h3 className="text-[#1F2937] font-semibold mb-3">Admin Menu</h3>
+              <ul className="space-y-2 text-sm text-[#6B7280]">
+                <li><a className="hover:text-[#2F855A]" href="#overview">Overview</a></li>
+                <li><a className="hover:text-[#2F855A]" href="#activity">Recent activity</a></li>
+                <li><a className="hover:text-[#2F855A]" href="#users">Users</a></li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="lg:col-span-3">
         {/* Stats Overview */}
         <motion.div
-          initial={{ opacity: 0, y: 50 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
+          transition={{ duration: 0.35, delay: 0.1 }}
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
+          id="overview"
         >
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            className="glass-card p-6 text-center"
-          >
-            <Users className="w-12 h-12 text-blue-400 mx-auto mb-4" />
-            <h3 className="text-3xl font-bold text-white mb-2">{stats.totalUsers || 0}</h3>
-            <p className="text-gray-300">Total Users</p>
-          </motion.div>
+          <div className="trust-card p-6 text-center card-lift">
+            <Users className="w-12 h-12 text-[#1D4ED8] mx-auto mb-3" />
+            <h3 className="text-3xl font-bold text-[#1F2937] mb-1">{stats.totalUsers || 0}</h3>
+            <p className="text-[#6B7280]">Total users</p>
+          </div>
           
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            className="glass-card p-6 text-center"
-          >
-            <Target className="w-12 h-12 text-green-400 mx-auto mb-4" />
-            <h3 className="text-3xl font-bold text-white mb-2">{stats.activeCampaigns || 0}</h3>
-            <p className="text-gray-300">Active Campaigns</p>
-          </motion.div>
+          <div className="trust-card p-6 text-center card-lift">
+            <Target className="w-12 h-12 text-[#2F855A] mx-auto mb-3" />
+            <h3 className="text-3xl font-bold text-[#1F2937] mb-1">{stats.activeCampaigns || 0}</h3>
+            <p className="text-[#6B7280]">Active campaigns</p>
+          </div>
           
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            className="glass-card p-6 text-center"
-          >
-            <IndianRupee className="w-12 h-12 text-yellow-400 mx-auto mb-4" />
-            <h3 className="text-3xl font-bold text-white mb-2">
+          <div className="trust-card p-6 text-center card-lift">
+            <IndianRupee className="w-12 h-12 text-[#CA8A04] mx-auto mb-3" />
+            <h3 className="text-3xl font-bold text-[#1F2937] mb-1">
               {formatCurrency(stats.totalRaised)}
             </h3>
-            <p className="text-gray-300">Total Raised</p>
-          </motion.div>
+            <p className="text-[#6B7280]">Total raised</p>
+          </div>
           
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            className="glass-card p-6 text-center"
-          >
-            <TrendingUp className="w-12 h-12 text-purple-400 mx-auto mb-4" />
-            <h3 className="text-3xl font-bold text-white mb-2">{stats.totalDonationsCount || 0}</h3>
-            <p className="text-gray-300">Total Donations</p>
-          </motion.div>
+          <div className="trust-card p-6 text-center card-lift">
+            <TrendingUp className="w-12 h-12 text-[#7C3AED] mx-auto mb-3" />
+            <h3 className="text-3xl font-bold text-[#1F2937] mb-1">{stats.totalDonationsCount || 0}</h3>
+            <p className="text-[#6B7280]">Total donations</p>
+          </div>
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Recent Activity */}
           <motion.div
-            initial={{ opacity: 0, x: -50 }}
+            initial={{ opacity: 0, x: -15 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-            className="glass-card p-6"
+            transition={{ duration: 0.35, delay: 0.15 }}
+            className="trust-card p-6"
+            id="activity"
           >
             <div className="flex items-center space-x-2 mb-6">
-              <Activity className="w-6 h-6 text-purple-400" />
-              <h2 className="text-2xl font-bold text-white">Recent Activity</h2>
+              <Activity className="w-6 h-6 text-[#2F855A]" />
+              <div>
+                <p className="text-sm font-semibold text-[#2F855A]">Real-time updates</p>
+                <h2 className="text-2xl font-bold text-[#1F2937]">Recent activity</h2>
+              </div>
             </div>
             
             <div className="space-y-4">
               {activity.recentDonations?.slice(0, 5).map((donation, index) => (
                 <motion.div
                   key={donation.id}
-                  initial={{ opacity: 0, x: -20 }}
+                  initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.5, delay: 0.6 + index * 0.1 }}
-                  className="flex items-center justify-between p-3 bg-white/5 rounded-lg"
+                  transition={{ duration: 0.25, delay: 0.25 + index * 0.05 }}
+                  className="flex items-center justify-between p-3 bg-[#F9FAF9] border border-[#E5E7EB] rounded-lg"
                 >
                   <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center">
-                      <IndianRupee className="w-4 h-4 text-green-400" />
+                    <div className="w-8 h-8 bg-[#EDF7F1] text-[#2F855A] rounded-full flex items-center justify-center">
+                      <IndianRupee className="w-4 h-4" />
                     </div>
                     <div>
-                      <p className="text-white font-medium">
+                      <p className="text-[#1F2937] font-medium">
                         {donation.userName ? (
                           <>
-                            <span className="text-purple-300">{donation.userName}</span> donated to{' '}
-                            <span className="text-blue-300">{donation.campaignTitle || 'Campaign'}</span>
+                            <span className="text-[#1F2937] font-semibold">{donation.userName}</span> donated to{' '}
+                            <span className="text-[#1D4ED8] font-semibold">{donation.campaignTitle || 'Campaign'}</span>
                           </>
                         ) : (
                           <>
-                            Donation to <span className="text-blue-300">{donation.campaignTitle || 'Campaign'}</span>
+                            Donation to <span className="text-[#1D4ED8] font-semibold">{donation.campaignTitle || 'Campaign'}</span>
                           </>
                         )}
                       </p>
                       {donation.userEmail && (
-                        <p className="text-xs text-gray-400">{donation.userEmail}</p>
+                        <p className="text-xs text-[#6B7280]">{donation.userEmail}</p>
                       )}
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-green-400 font-semibold">{formatCurrency(donation.amount)}</p>
-                    <p className="text-xs text-gray-400">
+                    <p className="text-[#2F855A] font-semibold">{formatCurrency(donation.amount)}</p>
+                    <p className="text-xs text-[#6B7280]">
                       {new Date(donation.donatedAt).toLocaleString()}
                     </p>
                   </div>
@@ -158,23 +168,23 @@ const AdminDashboard = () => {
               {activity.recentCampaigns?.slice(0, 3).map((campaign, index) => (
                 <motion.div
                   key={campaign.id}
-                  initial={{ opacity: 0, x: -20 }}
+                  initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.5, delay: 0.8 + index * 0.1 }}
-                  className="flex items-center justify-between p-3 bg-white/5 rounded-lg"
+                  transition={{ duration: 0.25, delay: 0.3 + index * 0.05 }}
+                  className="flex items-center justify-between p-3 bg-[#F9FAF9] border border-[#E5E7EB] rounded-lg"
                 >
                   <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center">
-                      <Target className="w-4 h-4 text-blue-400" />
+                    <div className="w-8 h-8 bg-[#E0E7FF] text-[#1D4ED8] rounded-full flex items-center justify-center">
+                      <Target className="w-4 h-4" />
                     </div>
                     <div>
-                      <p className="text-white font-medium">New Campaign</p>
-                      <p className="text-sm text-gray-400">{campaign.title}</p>
+                      <p className="text-[#1F2937] font-semibold">New campaign</p>
+                      <p className="text-sm text-[#6B7280]">{campaign.title}</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-blue-400 font-semibold">{formatCurrency(campaign.targetAmount)}</p>
-                    <p className="text-xs text-gray-400">
+                    <p className="text-[#1D4ED8] font-semibold">{formatCurrency(campaign.targetAmount)}</p>
+                    <p className="text-xs text-[#6B7280]">
                       {new Date(campaign.createdAt).toLocaleDateString()}
                     </p>
                   </div>
@@ -185,43 +195,47 @@ const AdminDashboard = () => {
 
           {/* User Management */}
           <motion.div
-            initial={{ opacity: 0, x: 50 }}
+            initial={{ opacity: 0, x: 15 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, delay: 0.6 }}
-            className="glass-card p-6"
+            transition={{ duration: 0.35, delay: 0.2 }}
+            className="trust-card p-6"
+            id="users"
           >
             <div className="flex items-center space-x-2 mb-6">
-              <Users className="w-6 h-6 text-blue-400" />
-              <h2 className="text-2xl font-bold text-white">User Management</h2>
+              <Users className="w-6 h-6 text-[#1D4ED8]" />
+              <div>
+                <p className="text-sm font-semibold text-[#2F855A]">Users</p>
+                <h2 className="text-2xl font-bold text-[#1F2937]">Recent signups</h2>
+              </div>
             </div>
             
             <div className="space-y-3 max-h-96 overflow-y-auto">
               {users.slice(0, 10).map((user, index) => (
                 <motion.div
                   key={user.id}
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.8 + index * 0.1 }}
-                  className="flex items-center justify-between p-3 bg-white/5 rounded-lg"
+                  transition={{ duration: 0.25, delay: 0.25 + index * 0.05 }}
+                  className="flex items-center justify-between p-3 bg-[#F9FAF9] border border-[#E5E7EB] rounded-lg"
                 >
                   <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
-                      <Users className="w-4 h-4 text-white" />
+                    <div className="w-8 h-8 bg-[#EDF7F1] text-[#2F855A] rounded-full flex items-center justify-center">
+                      <Users className="w-4 h-4" />
                     </div>
                     <div>
-                      <p className="text-white font-medium">{user.name}</p>
-                      <p className="text-sm text-gray-400">{user.email}</p>
+                      <p className="text-[#1F2937] font-semibold">{user.name}</p>
+                      <p className="text-sm text-[#6B7280]">{user.email}</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <span className={`text-xs px-2 py-1 rounded-full ${
+                    <span className={`text-xs px-2 py-1 rounded-full font-semibold ${
                       user.role === 'ADMIN' 
-                        ? 'bg-purple-500/20 text-purple-400' 
-                        : 'bg-blue-500/20 text-blue-400'
+                        ? 'bg-[#E9D5FF] text-[#7C3AED]' 
+                        : 'bg-[#E0E7FF] text-[#1D4ED8]'
                     }`}>
                       {user.role}
                     </span>
-                    <p className="text-xs text-gray-400 mt-1">
+                    <p className="text-xs text-[#6B7280] mt-1">
                       {new Date(user.createdAt).toLocaleDateString()}
                     </p>
                   </div>
@@ -230,11 +244,13 @@ const AdminDashboard = () => {
             </div>
             
             {users.length > 10 && (
-              <p className="text-center text-gray-400 text-sm mt-4">
+              <p className="text-center text-[#6B7280] text-sm mt-4">
                 Showing 10 of {users.length} users
               </p>
             )}
           </motion.div>
+        </div>
+          </div>
         </div>
       </motion.div>
     </div>

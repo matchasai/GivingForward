@@ -3,21 +3,80 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    /* NGO-Style Color Palette */
+    --color-bg-calm: #F9FAF9;
+    --color-surface: #FFFFFF;
+    --color-primary: #2F855A;
+    --color-primary-light: #EDF7F1;
+    --color-primary-hover: #276749;
+    --color-text-primary: #1F2937;
+    --color-text-secondary: #6B7280;
+    --color-border: #E5E7EB;
+    --color-border-light: #F3F4F6;
+  }
+
   body {
-    @apply bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 min-h-screen;
+    @apply bg-[#F9FAF9] min-h-screen text-gray-800;
   }
 }
 
 @layer components {
-  .glass-card {
-    @apply bg-white/10 backdrop-blur-md border border-white/20 rounded-xl shadow-xl;
+  /* Trust Card - Clean white card with soft shadow */
+  .trust-card {
+    @apply bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300;
   }
   
-  .glass-button {
-    @apply bg-white/20 backdrop-blur-sm border border-white/30 rounded-lg px-6 py-3 text-white font-medium hover:bg-white/30 transition-all duration-300;
+  /* Primary CTA Button - Green accent */
+  .donate-btn {
+    @apply bg-[#2F855A] text-white rounded-lg px-6 py-3 font-medium hover:bg-[#276749] hover:scale-[1.02] transition-all duration-200 shadow-sm;
   }
   
-  .gradient-text {
-    @apply bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent;
+  /* Secondary Button - Outlined */
+  .btn-secondary {
+    @apply border-2 border-[#2F855A] text-[#2F855A] rounded-lg px-6 py-3 font-medium hover:bg-[#EDF7F1] transition-all duration-200;
+  }
+
+  /* Calm Background */
+  .calm-bg {
+    @apply bg-[#F9FAF9];
+  }
+
+  /* Soft Shadow */
+  .soft-shadow {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  }
+
+  /* Card Hover Lift */
+  .card-lift {
+    @apply transition-all duration-300;
+  }
+  
+  .card-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  }
+
+  /* Progress Bar */
+  .progress-bar {
+    @apply bg-gray-200 rounded-full h-2 overflow-hidden;
+  }
+
+  .progress-fill {
+    @apply bg-[#2F855A] h-full rounded-full transition-all duration-500 ease-out;
+  }
+
+  /* Section Container */
+  .section-container {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12;
+  }
+
+  /* Text Styles */
+  .text-heading {
+    @apply text-[#1F2937] font-bold;
+  }
+
+  .text-body {
+    @apply text-[#6B7280] leading-relaxed;
   }
 } 

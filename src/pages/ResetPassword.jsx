@@ -63,7 +63,6 @@ export default function ResetPassword() {
       toast.success('Password reset successful! You can now login with your new password.')
       navigate('/login')
     } catch (error) {
-      console.error('Password reset failed:', error)
       if (error.response?.status === 400) {
         toast.error('Invalid or expired reset token. Please request a new password reset.')
       } else if (error.response?.status === 404) {
@@ -97,26 +96,26 @@ export default function ResetPassword() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+    <div className="min-h-screen calm-bg flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white/10 backdrop-blur-md rounded-2xl p-8 w-full max-w-md border border-white/20 shadow-2xl"
+        className="trust-card p-8 w-full max-w-md"
       >
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Lock className="w-8 h-8 text-purple-400" />
+          <div className="w-16 h-16 bg-[#EDF7F1] text-[#2F855A] rounded-full flex items-center justify-center mx-auto mb-4">
+            <Lock className="w-8 h-8" />
           </div>
-          <h2 className="text-2xl font-bold text-white mb-2">Reset Password</h2>
-          <p className="text-gray-300">
-            Enter your new password below
+          <h2 className="text-2xl font-bold text-[#1F2937] mb-2">Reset password</h2>
+          <p className="text-[#6B7280]">
+            Enter and confirm your new password.
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label htmlFor="newPassword" className="block text-sm font-medium text-gray-300 mb-2">
-              New Password
+            <label htmlFor="newPassword" className="block text-sm font-medium text-[#1F2937] mb-2">
+              New password
             </label>
             <div className="relative">
               <input
@@ -125,28 +124,28 @@ export default function ResetPassword() {
                 type={showPassword ? 'text' : 'password'}
                 value={formData.newPassword}
                 onChange={handleChange}
-                className={`w-full px-4 py-3 bg-white/10 border ${
-                  errors.newPassword ? 'border-red-500' : 'border-white/20'
-                } rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent pr-12`}
+                className={`w-full px-4 py-3 bg-white border ${
+                  errors.newPassword ? 'border-red-500' : 'border-[#E5E7EB]'
+                } rounded-lg text-[#1F2937] placeholder-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#2F855A] focus:border-transparent pr-12`}
                 placeholder="Enter new password"
                 required
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#9CA3AF] hover:text-[#2F855A]"
               >
                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
             </div>
             {errors.newPassword && (
-              <p className="text-red-400 text-sm mt-1">{errors.newPassword}</p>
+              <p className="text-red-600 text-sm mt-1">{errors.newPassword}</p>
             )}
           </div>
 
           <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-300 mb-2">
-              Confirm New Password
+            <label htmlFor="confirmPassword" className="block text-sm font-medium text-[#1F2937] mb-2">
+              Confirm new password
             </label>
             <div className="relative">
               <input
@@ -155,37 +154,37 @@ export default function ResetPassword() {
                 type={showConfirmPassword ? 'text' : 'password'}
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                className={`w-full px-4 py-3 bg-white/10 border ${
-                  errors.confirmPassword ? 'border-red-500' : 'border-white/20'
-                } rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent pr-12`}
+                className={`w-full px-4 py-3 bg-white border ${
+                  errors.confirmPassword ? 'border-red-500' : 'border-[#E5E7EB]'
+                } rounded-lg text-[#1F2937] placeholder-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#2F855A] focus:border-transparent pr-12`}
                 placeholder="Confirm new password"
                 required
               />
               <button
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#9CA3AF] hover:text-[#2F855A]"
               >
                 {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
             </div>
             {errors.confirmPassword && (
-              <p className="text-red-400 text-sm mt-1">{errors.confirmPassword}</p>
+              <p className="text-red-600 text-sm mt-1">{errors.confirmPassword}</p>
             )}
           </div>
 
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full glass-button bg-purple-500/20 hover:bg-purple-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full donate-btn disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isSubmitting ? 'Resetting...' : 'Reset Password'}
+            {isSubmitting ? 'Resetting...' : 'Reset password'}
           </button>
         </form>
 
         <div className="mt-6 text-center">
-          <Link to="/login" className="text-purple-400 hover:text-purple-300 text-sm">
-            Back to Login
+          <Link to="/login" className="text-[#2F855A] hover:text-[#276749] text-sm font-medium">
+            Back to login
           </Link>
         </div>
       </motion.div>

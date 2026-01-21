@@ -1,6 +1,6 @@
-import { Share2, Facebook, Twitter, Linkedin, Link as LinkIcon } from 'lucide-react'
-import { useState } from 'react'
 import { motion } from 'framer-motion'
+import { Facebook, Linkedin, Link as LinkIcon, Share2, Twitter } from 'lucide-react'
+import { useState } from 'react'
 
 function SocialShare({ url, title, description }) {
   const [copied, setCopied] = useState(false)

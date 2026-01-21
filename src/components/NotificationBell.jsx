@@ -23,7 +23,7 @@ const NotificationBell = () => {
         setUnreadCount(0)
         return
       }
-      console.error('Failed to fetch unread count:', error)
+      setUnreadCount(0)
     }
   }, [token])
 
@@ -112,12 +112,12 @@ const NotificationBell = () => {
       {/* Bell Icon Button */}
       <button
         onClick={handleToggleDropdown}
-        className="relative p-2 hover:bg-white/10 rounded-full transition-colors"
+        className="relative p-2 rounded-full hover:bg-[#F3F4F6] transition-colors border border-transparent focus:outline-none focus:ring-2 focus:ring-[#2F855A]/40"
         aria-label="Notifications"
       >
-        <Bell className="w-6 h-6 text-white" />
+        <Bell className="w-5 h-5 text-[#1F2937]" />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+          <span className="absolute -top-1 -right-1 bg-[#2F855A] text-white text-[11px] font-semibold rounded-full w-5 h-5 flex items-center justify-center shadow-sm">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
@@ -139,29 +139,29 @@ const NotificationBell = () => {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -10, scale: 0.95 }}
               transition={{ duration: 0.2 }}
-              className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-2xl z-50 overflow-hidden"
+              className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-2xl z-50 overflow-hidden border border-[#E5E7EB]"
             >
               {/* Header */}
-              <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-purple-600 to-blue-600">
-                <h3 className="text-lg font-semibold text-white">Notifications</h3>
+              <div className="flex items-center justify-between p-4 border-b bg-[#F9FAF9]">
+                <h3 className="text-lg font-semibold text-[#1F2937]">Notifications</h3>
                 <button
                   onClick={() => setShowDropdown(false)}
-                  className="p-1 hover:bg-white/20 rounded transition-colors"
+                  className="p-1 hover:bg-[#E5E7EB] rounded transition-colors"
                 >
-                  <X className="w-5 h-5 text-white" />
+                  <X className="w-5 h-5 text-[#4B5563]" />
                 </button>
               </div>
 
               {/* Actions */}
               {notifications.length > 0 && (
-                <div className="flex items-center justify-between p-2 bg-gray-50 border-b">
-                  <span className="text-sm text-gray-600">
+                <div className="flex items-center justify-between p-2 bg-[#F9FAF9] border-b">
+                  <span className="text-sm text-[#4B5563]">
                     {unreadCount} unread
                   </span>
                   {unreadCount > 0 && (
                     <button
                       onClick={markAllAsRead}
-                      className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                      className="text-sm text-[#2F855A] hover:text-[#276749] font-semibold"
                     >
                       Mark all as read
                     </button>
@@ -173,12 +173,12 @@ const NotificationBell = () => {
               <div className="max-h-96 overflow-y-auto">
                 {loading ? (
                   <div className="flex items-center justify-center p-8">
-                    <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                    <div className="w-8 h-8 border-4 border-[#2F855A] border-t-transparent rounded-full animate-spin" />
                   </div>
                 ) : notifications.length === 0 ? (
                   <div className="text-center py-8 px-4">
-                    <Bell className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                    <p className="text-gray-500">No notifications yet</p>
+                    <Bell className="w-12 h-12 text-[#D1D5DB] mx-auto mb-3" />
+                    <p className="text-[#6B7280]">No notifications yet</p>
                   </div>
                 ) : (
                   <div className="divide-y">
@@ -186,15 +186,15 @@ const NotificationBell = () => {
                       <div
                         key={notification.id}
                         className={`p-4 hover:bg-gray-50 transition-colors ${
-                          !notification.read ? 'bg-blue-50' : ''
+                          !notification.read ? 'bg-[#F0FDF4]' : ''
                         }`}
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex-1 min-w-0">
-                            <p className={`text-sm ${!notification.read ? 'font-semibold text-gray-900' : 'text-gray-700'}`}>
+                            <p className={`text-sm ${!notification.read ? 'font-semibold text-[#1F2937]' : 'text-[#4B5563]'}`}>
                               {notification.message}
                             </p>
-                            <p className="text-xs text-gray-500 mt-1">
+                            <p className="text-xs text-[#6B7280] mt-1">
                               {formatTime(notification.createdAt)}
                             </p>
                           </div>
@@ -202,15 +202,15 @@ const NotificationBell = () => {
                             {!notification.read && (
                               <button
                                 onClick={() => markAsRead(notification.id)}
-                                className="p-1 hover:bg-gray-200 rounded transition-colors"
+                                className="p-1 rounded-full bg-[#EDF7F1] text-[#2F855A] hover:bg-[#E3F2EB] transition-colors"
                                 title="Mark as read"
                               >
-                                <Check className="w-4 h-4 text-green-600" />
+                                <Check className="w-4 h-4" />
                               </button>
                             )}
                             <button
                               onClick={() => deleteNotification(notification.id)}
-                              className="p-1 hover:bg-gray-200 rounded transition-colors"
+                              className="p-1 rounded-full bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
                               title="Delete"
                             >
                               <Trash2 className="w-4 h-4 text-red-600" />

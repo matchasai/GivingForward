@@ -21,6 +21,14 @@ export default defineConfig(({ command }) => {
     },
     build: {
       rollupOptions: {
+        output: {
+          // Manual chunks to keep the main bundle lean
+          manualChunks: {
+            react: ['react', 'react-dom', 'react-router-dom'],
+            charts: ['recharts', 'framer-motion'],
+            icons: ['lucide-react']
+          }
+        },
         onwarn(warning, warn) {
           // Skip certain warnings
           if (warning.code === 'MODULE_LEVEL_DIRECTIVE') {

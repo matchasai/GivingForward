@@ -110,7 +110,6 @@ export const AuthProvider = ({ children }) => {
     try {
       axios.post('/api/auth/logout')
     } catch (err) {
-      console.warn('Logout request failed:', err)
     }
     setUser(null)
     setToken(null)

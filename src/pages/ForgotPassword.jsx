@@ -25,7 +25,6 @@ export default function ForgotPassword() {
       setIsSubmitted(true)
       toast.success('Password reset link sent to your email')
     } catch (error) {
-      console.error('Password reset request failed:', error)
       if (error.response?.status === 404) {
         toast.error('No account found with this email address')
       } else {
@@ -38,23 +37,22 @@ export default function ForgotPassword() {
 
   if (isSubmitted) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+      <div className="min-h-screen calm-bg flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white/10 backdrop-blur-md rounded-2xl p-8 w-full max-w-md border border-white/20 shadow-2xl"
+          className="trust-card p-8 w-full max-w-md"
         >
           <div className="text-center">
-            <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Mail className="w-8 h-8 text-green-400" />
+            <div className="w-16 h-16 bg-[#EDF7F1] text-[#2F855A] rounded-full flex items-center justify-center mx-auto mb-4">
+              <Mail className="w-8 h-8" />
             </div>
-            <h2 className="text-2xl font-bold text-white mb-4">Check Your Email</h2>
-            <p className="text-gray-300 mb-6">
-              We&apos;ve sent a password reset link to <strong>{email}</strong>. 
-              Please check your email and follow the instructions to reset your password.
+            <h2 className="text-2xl font-bold text-[#1F2937] mb-4">Check your email</h2>
+            <p className="text-[#6B7280] mb-4">
+              We&apos;ve sent a password reset link to <strong className="text-[#1F2937]">{email}</strong>.
             </p>
-            <p className="text-sm text-gray-400 mb-6">
-              Didn&apos;t receive the email? Check your spam folder or try again in a few minutes.
+            <p className="text-sm text-[#6B7280] mb-6">
+              Didn&apos;t receive it? Check spam or try again in a few minutes.
             </p>
             <div className="space-y-3">
               <button
@@ -62,12 +60,12 @@ export default function ForgotPassword() {
                   setIsSubmitted(false)
                   setEmail('')
                 }}
-                className="w-full glass-button"
+                className="w-full btn-secondary"
               >
-                Try Different Email
+                Try different email
               </button>
-              <Link to="/login" className="block w-full glass-button text-center">
-                Back to Login
+              <Link to="/login" className="block w-full donate-btn text-center">
+                Back to login
               </Link>
             </div>
           </div>
@@ -77,33 +75,33 @@ export default function ForgotPassword() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+    <div className="min-h-screen calm-bg flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white/10 backdrop-blur-md rounded-2xl p-8 w-full max-w-md border border-white/20 shadow-2xl"
+        className="trust-card p-8 w-full max-w-md"
       >
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Mail className="w-8 h-8 text-purple-400" />
+          <div className="w-16 h-16 bg-[#EDF7F1] text-[#2F855A] rounded-full flex items-center justify-center mx-auto mb-4">
+            <Mail className="w-8 h-8" />
           </div>
-          <h2 className="text-2xl font-bold text-white mb-2">Forgot Password?</h2>
-          <p className="text-gray-300">
-            Enter your email address and we&apos;ll send you a link to reset your password.
+          <h2 className="text-2xl font-bold text-[#1F2937] mb-2">Forgot password?</h2>
+          <p className="text-[#6B7280]">
+            Enter your email and we&apos;ll send you a reset link.
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
-              Email Address
+            <label htmlFor="email" className="block text-sm font-medium text-[#1F2937] mb-2">
+              Email address
             </label>
             <input
               id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="w-full px-4 py-3 bg-white border border-[#E5E7EB] rounded-lg text-[#1F2937] placeholder-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#2F855A] focus:border-transparent"
               placeholder="Enter your email"
               required
             />
@@ -112,15 +110,15 @@ export default function ForgotPassword() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full glass-button bg-purple-500/20 hover:bg-purple-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full donate-btn disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isSubmitting ? 'Sending...' : 'Send Reset Link'}
+            {isSubmitting ? 'Sending...' : 'Send reset link'}
           </button>
         </form>
 
         <div className="mt-6 text-center">
-          <Link to="/login" className="text-purple-400 hover:text-purple-300 text-sm">
-            Back to Login
+          <Link to="/login" className="text-[#2F855A] hover:text-[#276749] text-sm font-medium">
+            Back to login
           </Link>
         </div>
       </motion.div>

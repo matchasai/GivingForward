@@ -1,6 +1,7 @@
 import axios from 'axios'
 import { motion } from 'framer-motion'
 import { useCallback, useEffect, useState } from 'react'
+import toast from 'react-hot-toast'
 
 const emptyForm = { id: null, name: '', email: '', password: '', role: 'USER' }
 
@@ -31,7 +32,7 @@ export default function AdminUsers() {
       setUsers(data.content || [])
       setTotalPages(data.totalPages || 0)
     } catch (err) {
-      console.error(err)
+      toast.error('Failed to load users')
     } finally {
       setLoading(false)
     }
@@ -64,7 +65,7 @@ export default function AdminUsers() {
       setForm(emptyForm)
       await loadUsers()
     } catch (err) {
-      console.error(err)
+      toast.error('Failed to save user')
     } finally {
       setSubmitting(false)
     }
@@ -117,20 +118,24 @@ export default function AdminUsers() {
   }
 
   return (
-    <div className="space-y-8">
-      <h1 className="text-3xl font-bold text-white">Admin: Users</h1>
+    <div className="space-y-8 calm-bg section-container">
+      <div>
+        <p className="text-sm font-semibold text-[#2F855A]">Admin tools</p>
+        <h1 className="text-3xl font-bold text-[#1F2937]">Users</h1>
+        <p className="text-[#6B7280] mt-1">Manage user access, roles, and invitations.</p>
+      </div>
 
       {/* Filters */}
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-4">
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="trust-card p-4">
         <div className="grid grid-cols-1 md:grid-cols-5 gap-3 items-end">
           <input
-            className="bg-white/10 border border-white/20 rounded-lg p-3 text-white"
+            className="bg-white border border-[#E5E7EB] rounded-lg p-3 text-[#1F2937] placeholder-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#2F855A]"
             placeholder="Search name or email"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
           <select
-            className="bg-white/10 border border-white/20 rounded-lg p-3 text-white"
+            className="bg-white border border-[#E5E7EB] rounded-lg p-3 text-[#1F2937] focus:outline-none focus:ring-2 focus:ring-[#2F855A]"
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
           >
@@ -139,7 +144,7 @@ export default function AdminUsers() {
             <option value="ADMIN">ADMIN</option>
           </select>
           <select
-            className="bg-white/10 border border-white/20 rounded-lg p-3 text-white"
+            className="bg-white border border-[#E5E7EB] rounded-lg p-3 text-[#1F2937] focus:outline-none focus:ring-2 focus:ring-[#2F855A]"
             value={sort}
             onChange={(e) => setSort(e.target.value)}
           >
@@ -149,7 +154,7 @@ export default function AdminUsers() {
             <option value="name,desc">Name Z-A</option>
           </select>
           <select
-            className="bg-white/10 border border-white/20 rounded-lg p-3 text-white"
+            className="bg-white border border-[#E5E7EB] rounded-lg p-3 text-[#1F2937] focus:outline-none focus:ring-2 focus:ring-[#2F855A]"
             value={size}
             onChange={(e) => {
               setSize(Number(e.target.value))
@@ -160,34 +165,34 @@ export default function AdminUsers() {
             <option value={20}>20 / page</option>
             <option value={50}>50 / page</option>
           </select>
-          <button className="glass-button" onClick={() => { setPage(0); loadUsers() }}>Apply</button>
+          <button className="donate-btn" onClick={() => { setPage(0); loadUsers() }}>Apply</button>
         </div>
       </motion.div>
 
       {/* Error Modal */}
       {errorModal && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50">
-          <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white rounded-lg shadow-lg p-6 max-w-sm w-full text-center">
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/40 px-4">
+          <motion.div initial={{ scale: 0.97, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="trust-card max-w-sm w-full text-center">
             <div className="text-red-600 font-bold mb-2">Error</div>
-            <div className="mb-4 text-gray-800">{errorModal}</div>
-            <button className="glass-button" onClick={() => setErrorModal(null)}>Close</button>
+            <div className="mb-4 text-[#1F2937]">{errorModal}</div>
+            <button className="btn-secondary" onClick={() => setErrorModal(null)}>Close</button>
           </motion.div>
         </div>
       )}
 
       {/* Create / Update Form */}
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-6">
-        <h2 className="text-xl text-white font-semibold mb-4">{form.id ? 'Update User' : 'Create User'}</h2>
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="trust-card p-6">
+        <h2 className="text-xl text-[#1F2937] font-semibold mb-4">{form.id ? 'Update user' : 'Create user'}</h2>
         <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <input
-            className="bg-white/10 border border-white/20 rounded-lg p-3 text-white"
+            className="bg-white border border-[#E5E7EB] rounded-lg p-3 text-[#1F2937] placeholder-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#2F855A]"
             placeholder="Name"
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
             required
           />
           <input
-            className="bg-white/10 border border-white/20 rounded-lg p-3 text-white"
+            className="bg-white border border-[#E5E7EB] rounded-lg p-3 text-[#1F2937] placeholder-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#2F855A]"
             placeholder="Email"
             type="email"
             value={form.email}
@@ -195,15 +200,15 @@ export default function AdminUsers() {
             required
           />
           <input
-            className="bg-white/10 border border-white/20 rounded-lg p-3 text-white"
-            placeholder={form.id ? 'New Password (optional)' : 'Password'}
+            className="bg-white border border-[#E5E7EB] rounded-lg p-3 text-[#1F2937] placeholder-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#2F855A]"
+            placeholder={form.id ? 'New password (optional)' : 'Password'}
             type="password"
             value={form.password}
             onChange={(e) => setForm({ ...form, password: e.target.value })}
             required={!form.id}
           />
           <select
-            className="bg-white/10 border border-white/20 rounded-lg p-3 text-white"
+            className="bg-white border border-[#E5E7EB] rounded-lg p-3 text-[#1F2937] focus:outline-none focus:ring-2 focus:ring-[#2F855A]"
             value={form.role}
             onChange={(e) => setForm({ ...form, role: e.target.value })}
           >
@@ -211,13 +216,13 @@ export default function AdminUsers() {
             <option value="ADMIN">ADMIN</option>
           </select>
           <div className="md:col-span-4 flex gap-3">
-            <button disabled={submitting} className="glass-button">
+            <button disabled={submitting} className="donate-btn disabled:opacity-50">
               {form.id ? 'Update' : 'Create'}
             </button>
             {form.id && (
               <button
                 type="button"
-                className="glass-button bg-gray-500/20"
+                className="btn-secondary"
                 onClick={() => setForm(emptyForm)}
               >
                 Cancel
@@ -228,14 +233,19 @@ export default function AdminUsers() {
       </motion.div>
 
       {/* Users Table */}
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-6">
-        <h2 className="text-xl text-white font-semibold mb-4">All Users</h2>
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="trust-card p-6">
+        <div className="flex justify-between items-center mb-4">
+          <div>
+            <p className="text-sm font-semibold text-[#2F855A]">Roster</p>
+            <h2 className="text-xl text-[#1F2937] font-semibold">All users</h2>
+          </div>
+        </div>
         {loading ? (
-          <div className="text-gray-300">Loading...</div>
+          <div className="text-[#6B7280]">Loading...</div>
         ) : (
           <div className="overflow-auto">
-            <table className="min-w-full text-sm text-gray-200">
-              <thead>
+            <table className="min-w-full text-sm text-[#1F2937]">
+              <thead className="bg-[#F9FAF9] text-[#4B5563]">
                 <tr className="text-left">
                   <th className="p-2">S.No</th>
                   <th className="p-2">Name</th>
@@ -246,14 +256,14 @@ export default function AdminUsers() {
               </thead>
               <tbody>
                 {users.map((u, idx) => (
-                  <tr key={u.id} className="border-t border-white/10">
+                  <tr key={u.id} className="border-t border-[#E5E7EB]">
                     <td className="p-2">{page * size + idx + 1}</td>
-                    <td className="p-2">{u.name}</td>
+                    <td className="p-2 font-medium">{u.name}</td>
                     <td className="p-2">{u.email}</td>
                     <td className="p-2">{u.role}</td>
-                    <td className="p-2 flex gap-2">
-                      <button className="glass-button bg-blue-500/20" onClick={() => onEdit(u)}>Edit</button>
-                      <button className="glass-button bg-red-500/20" onClick={() => handleDeleteClick(u)}>Delete</button>
+                    <td className="p-2 flex flex-wrap gap-2">
+                      <button className="btn-secondary" onClick={() => onEdit(u)}>Edit</button>
+                      <button className="px-3 py-2 rounded-lg font-semibold border border-red-200 text-red-700 bg-red-50" onClick={() => handleDeleteClick(u)}>Delete</button>
                     </td>
                   </tr>
                 ))}
@@ -261,10 +271,10 @@ export default function AdminUsers() {
             </table>
 
             {/* Pagination */}
-            <div className="flex justify-between items-center mt-4 text-gray-300">
+            <div className="flex justify-between items-center mt-4 text-[#6B7280]">
               <button
                 disabled={page === 0}
-                className="glass-button disabled:opacity-50"
+                className="btn-secondary disabled:opacity-50"
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
               >
                 Previous
@@ -272,7 +282,7 @@ export default function AdminUsers() {
               <span>Page {page + 1} of {Math.max(1, totalPages)}</span>
               <button
                 disabled={page + 1 >= totalPages}
-                className="glass-button disabled:opacity-50"
+                className="btn-secondary disabled:opacity-50"
                 onClick={() => setPage((p) => p + 1)}
               >
                 Next
@@ -282,13 +292,13 @@ export default function AdminUsers() {
         )}
       </motion.div>
 
-      {/* Error Modal */}
+      {/* Error Modal (delete) */}
       {errorModal && (
-        <div className="fixed inset-0 flex items-center justify-center z-[60]" onClick={() => setErrorModal(null)}>
+        <div className="fixed inset-0 flex items-center justify-center z-[60] bg-black/40" onClick={() => setErrorModal(null)}>
           <motion.div 
-            initial={{ scale: 0.8, opacity: 0, y: 20 }} 
+            initial={{ scale: 0.97, opacity: 0, y: 10 }} 
             animate={{ scale: 1, opacity: 1, y: 0 }} 
-            className="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full mx-4 border border-gray-200"
+            className="trust-card max-w-md w-full mx-4"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="text-center">
@@ -297,14 +307,14 @@ export default function AdminUsers() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.322 16.5c-.77.833.192 2.5 1.732 2.5z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Cannot Delete User</h3>
-              <p className="text-gray-600 mb-6 leading-relaxed">{errorModal}</p>
+              <h3 className="text-xl font-bold text-[#1F2937] mb-2">Cannot delete user</h3>
+              <p className="text-[#4B5563] mb-6 leading-relaxed">{errorModal}</p>
               <div className="flex gap-3 justify-center">
                 <button 
-                  className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium shadow-lg hover:shadow-xl"
+                  className="px-6 py-3 rounded-lg font-semibold border border-red-200 text-red-700 bg-red-50"
                   onClick={() => setErrorModal(null)}
                 >
-                  I Understand
+                  I understand
                 </button>
               </div>
             </div>
@@ -314,37 +324,40 @@ export default function AdminUsers() {
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && selectedUser && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50">
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/40 px-4">
           <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
+            initial={{ scale: 0.97, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="bg-red-900/90 backdrop-blur-sm border border-red-500/30 rounded-lg p-6 max-w-md w-full text-center"
+            className="trust-card max-w-md w-full"
           >
-            <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-            </div>
-            <h3 className="text-xl font-bold text-white mb-2">Delete User</h3>
-            <p className="text-gray-300 mb-2">Are you sure you want to permanently delete:</p>
-            <p className="text-white font-semibold mb-4">{selectedUser.name} ({selectedUser.email})</p>
-            <p className="text-red-300 text-sm mb-6">⚠️ This action cannot be undone!</p>
-            <div className="flex gap-3 justify-center">
-              <button
-                onClick={() => {
-                  setShowDeleteModal(false)
-                  setSelectedUser(null)
-                }}
-                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmDelete}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-              >
-                Delete Permanently
-              </button>
+            <div className="flex items-start gap-3">
+              <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center text-red-600">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-[#1F2937]">Delete user</h3>
+                <p className="text-[#4B5563] mt-1">This action cannot be undone.</p>
+                <p className="text-[#111827] font-semibold mt-2">{selectedUser.name} ({selectedUser.email})</p>
+                <div className="flex gap-3 justify-end mt-4">
+                  <button
+                    onClick={() => {
+                      setShowDeleteModal(false)
+                      setSelectedUser(null)
+                    }}
+                    className="btn-secondary"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={confirmDelete}
+                    className="px-4 py-2 rounded-lg font-semibold border border-red-200 text-red-700 bg-red-50"
+                  >
+                    Delete permanently
+                  </button>
+                </div>
+              </div>
             </div>
           </motion.div>
         </div>

@@ -70,7 +70,7 @@ axios.interceptors.response.use(
           try {
             window.location.assign('/login')
           } catch (redirectErr) {
-            console.warn('Redirect to login failed:', redirectErr)
+            window.location.href = '/login'
           }
           throw error;
         }
@@ -90,7 +90,7 @@ axios.interceptors.response.use(
         try {
           window.location.assign('/login')
         } catch (redirectErr) {
-          console.warn('Redirect to login failed:', redirectErr)
+          window.location.href = '/login'
         }
         return Promise.reject(err);
       } finally {
@@ -102,7 +102,7 @@ axios.interceptors.response.use(
       const msg = error.response?.data?.message || error.message || 'Request failed';
       window.dispatchEvent(new CustomEvent('app:error', { detail: { message: msg } }))
     } catch (eventErr) {
-      console.warn('Error dispatching app:error event:', eventErr)
+      // Swallow dispatch failures silently to avoid noisy logs
     }
     return Promise.reject(error);
   }

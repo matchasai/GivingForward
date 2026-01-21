@@ -1,11 +1,12 @@
 import axios from 'axios'
 import { motion } from 'framer-motion'
 import { useCallback, useEffect, useState } from 'react'
+import toast from 'react-hot-toast'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { formatINR } from '../utils/currency'
 
-const emptyForm = { id: null, title: '', description: '', targetAmount: '', imageUrl: '' }
+const emptyForm = { id: null, title: '', description: '', targetAmount: '', imageUrl: '', category: 'Other', endDate: '' }
 
 export default function AdminCampaigns() {
   const navigate = useNavigate()
@@ -25,10 +26,9 @@ export default function AdminCampaigns() {
     setNotifyCampaign(null)
     try {
       await axios.post(`/api/campaigns/${campaign.id}/notify`)
-      // Optionally show a success modal or toast here
+      toast.success('Notification sent')
     } catch (error) {
-      // Optionally show an error modal or toast here
-      console.error('Notify failed:', error)
+      toast.error('Failed to send notification')
     }
   }
 
@@ -38,6 +38,8 @@ export default function AdminCampaigns() {
   const [form, setForm] = useState(emptyForm)
   const [submitting, setSubmitting] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [updateForm, setUpdateForm] = useState({ campaignId: '', text: '', imageUrl: '' })
+  const [postingUpdate, setPostingUpdate] = useState(false)
   const [page, setPage] = useState(0)
   const [size, setSize] = useState(10)
   const [totalPages, setTotalPages] = useState(0)
@@ -60,7 +62,7 @@ export default function AdminCampaigns() {
       setCampaigns(data.content || [])
       setTotalPages(data.totalPages || 0)
     } catch (error) {
-      console.error('Failed to load campaigns:', error)
+      toast.error('Failed to load campaigns')
     } finally {
       setLoading(false)
     }
@@ -96,23 +98,26 @@ export default function AdminCampaigns() {
         description: form.description,
         targetAmount: Number(form.targetAmount),
         imageUrl: form.imageUrl || undefined,
+        category: form.category || 'Other',
+        endDate: form.endDate ? new Date(form.endDate).toISOString() : undefined,
       }
       if (form.id) {
         await axios.put(`/api/campaigns/${form.id}`, payload)
       } else {
         await axios.post('/api/campaigns', payload)
       }
+      toast.success('Campaign saved')
       setForm(emptyForm)
       await loadCampaigns()
     } catch (error) {
-      console.error('Failed to save campaign:', error)
+      toast.error('Failed to save campaign')
     } finally {
       setSubmitting(false)
     }
   }
 
   const onEdit = (c) => {
-    setForm({ id: c.id, title: c.title, description: c.description, targetAmount: c.goalAmount, imageUrl: c.imageUrl || '' })
+    setForm({ id: c.id, title: c.title, description: c.description, targetAmount: c.targetAmount, imageUrl: c.imageUrl || '' })
   }
 
   const onDelete = async (id, title) => {
@@ -129,10 +134,7 @@ export default function AdminCampaigns() {
       setShowDeleteModal(false)
       setSelectedCampaign(null)
     } catch (error) {
-      console.error('Delete failed:', error)
-      console.error('Error response:', error.response?.data)
-      console.error('Error status:', error.response?.status)
-      alert(`Failed to delete campaign: ${error.response?.data?.message || error.message}`)
+      toast.error('Failed to delete campaign')
     }
   }
 
@@ -149,15 +151,13 @@ export default function AdminCampaigns() {
     
     try {
       await axios.patch(`/api/campaigns/${id}/toggle-status`)
+      toast.success(`Campaign ${action}d`)
       await loadCampaigns()
       setShowToggleModal(false)
       setSelectedCampaign(null)
       setActionType('')
     } catch (error) {
-      console.error('Toggle failed:', error)
-      console.error('Error response:', error.response?.data)
-      console.error('Error status:', error.response?.status)
-      alert(`Failed to ${action} campaign: ${error.response?.data?.message || error.message}`)
+      toast.error(`Failed to ${action} campaign`)
     }
   }
 
@@ -171,25 +171,60 @@ export default function AdminCampaigns() {
       const res = await axios.post('/api/uploads/image', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
       setForm({ ...form, imageUrl: res.data.url })
     } catch (error) {
-      console.error('Failed to upload image:', error)
+      toast.error('Image upload failed')
     } finally {
       setUploading(false)
     }
   }
 
-  return (
-    <div className="space-y-8">
-      <h1 className="text-3xl font-bold text-white">Admin: Campaigns</h1>
+  const onUploadUpdateImage = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      const res = await axios.post('/api/uploads/image', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+      setUpdateForm({ ...updateForm, imageUrl: res.data.url })
+    } catch (error) {
+      toast.error('Image upload failed')
+    } finally {
+      setUploading(false)
+    }
+  }
 
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-4">
+  const postUpdate = async () => {
+    const { campaignId, text, imageUrl } = updateForm
+    if (!campaignId || !text.trim()) return
+    setPostingUpdate(true)
+    try {
+      await axios.post(`/api/campaigns/${campaignId}/updates`, { text, imageUrl })
+      setUpdateForm({ campaignId: '', text: '', imageUrl: '' })
+      toast.success('Update posted')
+    } catch (error) {
+      toast.error('Failed to post update')
+    } finally {
+      setPostingUpdate(false)
+    }
+  }
+
+  return (
+    <div className="space-y-8 calm-bg section-container">
+      <div>
+        <p className="text-sm font-semibold text-[#2F855A]">Admin tools</p>
+        <h1 className="text-3xl font-bold text-[#1F2937]">Campaigns</h1>
+        <p className="text-[#6B7280] mt-1">Manage all campaigns, statuses, and notifications.</p>
+      </div>
+
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="trust-card p-4">
         <div className="grid grid-cols-1 md:grid-cols-6 gap-3 items-end">
-          <input className="bg-white/10 border border-white/20 rounded-lg p-3 text-white" placeholder="Search title" value={search} onChange={e=>setSearch(e.target.value)} />
-          <select className="bg-white/10 border border-white/20 rounded-lg p-3 text-white" value={active} onChange={e=>setActive(e.target.value)}>
+          <input className="bg-white border border-[#E5E7EB] rounded-lg p-3 text-[#1F2937] placeholder-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#2F855A]" placeholder="Search title" value={search} onChange={e=>setSearch(e.target.value)} />
+          <select className="bg-white border border-[#E5E7EB] rounded-lg p-3 text-[#1F2937] focus:outline-none focus:ring-2 focus:ring-[#2F855A]" value={active} onChange={e=>setActive(e.target.value)}>
             <option value="">All</option>
             <option value="true">Active</option>
             <option value="false">Inactive</option>
           </select>
-          <select className="bg-white/10 border border-white/20 rounded-lg p-3 text-white" value={sort} onChange={e=>handleSortChange(e.target.value)}>
+          <select className="bg-white border border-[#E5E7EB] rounded-lg p-3 text-[#1F2937] focus:outline-none focus:ring-2 focus:ring-[#2F855A]" value={sort} onChange={e=>handleSortChange(e.target.value)}>
             <option value="id,asc">ID (1-5)</option>
             <option value="id,desc">ID (5-1)</option>
             <option value="createdAt,desc">Newest</option>
@@ -197,45 +232,81 @@ export default function AdminCampaigns() {
             <option value="title,asc">Title A-Z</option>
             <option value="title,desc">Title Z-A</option>
           </select>
-          <select className="bg-white/10 border border-white/20 rounded-lg p-3 text-white" value={size} onChange={e=>{setSize(Number(e.target.value)); setPage(0)}}>
+          <select className="bg-white border border-[#E5E7EB] rounded-lg p-3 text-[#1F2937] focus:outline-none focus:ring-2 focus:ring-[#2F855A]" value={size} onChange={e=>{setSize(Number(e.target.value)); setPage(0)}}>
             <option value={10}>10 / page</option>
             <option value={20}>20 / page</option>
             <option value={50}>50 / page</option>
           </select>
           <div className="md:col-span-2">
-            <button className="glass-button" onClick={()=>{ setPage(0); loadCampaigns() }}>Apply</button>
+            <button className="donate-btn w-full" onClick={()=>{ setPage(0); loadCampaigns() }}>Apply</button>
           </div>
         </div>
       </motion.div>
 
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-6">
-        <h2 className="text-xl text-white font-semibold mb-4">{form.id ? 'Update Campaign' : 'Create Campaign'}</h2>
+      {/* Post Campaign Update */}
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="trust-card p-6">
+        <h2 className="text-xl text-[#1F2937] font-semibold mb-4">Post campaign update</h2>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-start">
+          <select className="bg-white border border-[#E5E7EB] rounded-lg p-3 text-[#1F2937] focus:outline-none focus:ring-2 focus:ring-[#2F855A]" value={updateForm.campaignId} onChange={e=>setUpdateForm({...updateForm, campaignId: e.target.value})}>
+            <option value="">Select campaign</option>
+            {campaigns.map(c => (
+              <option key={c.id} value={c.id}>{c.title}</option>
+            ))}
+          </select>
+          <input className="bg-white border border-[#E5E7EB] rounded-lg p-3 text-[#1F2937] placeholder-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#2F855A]" placeholder="Image URL (optional)" value={updateForm.imageUrl} onChange={e=>setUpdateForm({...updateForm, imageUrl: e.target.value})} />
+          <label className="btn-secondary cursor-pointer text-center">
+            Upload image
+            <input type="file" accept="image/*" onChange={onUploadUpdateImage} className="hidden" />
+          </label>
+          {uploading && <span className="text-[#6B7280] text-sm">Uploading...</span>}
+          <textarea className="bg-white border border-[#E5E7EB] rounded-lg p-3 text-[#1F2937] placeholder-[#9CA3AF] md:col-span-4 focus:outline-none focus:ring-2 focus:ring-[#2F855A]" rows={3} placeholder="Write an update..." value={updateForm.text} onChange={e=>setUpdateForm({...updateForm, text: e.target.value})} />
+          <div className="md:col-span-4">
+            <button disabled={postingUpdate || !updateForm.campaignId || !updateForm.text.trim()} className="donate-btn disabled:opacity-50" onClick={postUpdate}>
+              {postingUpdate ? 'Posting...' : 'Post update'}
+            </button>
+          </div>
+        </div>
+      </motion.div>
+
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="trust-card p-6">
+        <h2 className="text-xl text-[#1F2937] font-semibold mb-4">{form.id ? 'Update campaign' : 'Create campaign'}</h2>
         <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <input className="bg-white/10 border border-white/20 rounded-lg p-3 text-white" placeholder="Title" value={form.title} onChange={e=>setForm({...form, title:e.target.value})} required />
-          <input className="bg-white/10 border border-white/20 rounded-lg p-3 text-white" placeholder="Target Amount" type="number" min="1" value={form.targetAmount} onChange={e=>setForm({...form, targetAmount:e.target.value})} required />
-          <input className="bg-white/10 border border-white/20 rounded-lg p-3 text-white" placeholder="Image URL (optional)" value={form.imageUrl} onChange={e=>setForm({...form, imageUrl:e.target.value})} />
+          <input className="bg-white border border-[#E5E7EB] rounded-lg p-3 text-[#1F2937] placeholder-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#2F855A]" placeholder="Title" value={form.title} onChange={e=>setForm({...form, title:e.target.value})} required />
+          <input className="bg-white border border-[#E5E7EB] rounded-lg p-3 text-[#1F2937] placeholder-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#2F855A]" placeholder="Target Amount" type="number" min="1" value={form.targetAmount} onChange={e=>setForm({...form, targetAmount:e.target.value})} required />
+          <select className="bg-white border border-[#E5E7EB] rounded-lg p-3 text-[#1F2937] focus:outline-none focus:ring-2 focus:ring-[#2F855A]" value={form.category || 'Other'} onChange={e=>setForm({...form, category:e.target.value})} required>
+            <option value="Medical">Medical</option>
+            <option value="Education">Education</option>
+            <option value="Disaster Relief">Disaster Relief</option>
+            <option value="Community">Community</option>
+            <option value="Other">Other</option>
+          </select>
+          <input className="bg-white border border-[#E5E7EB] rounded-lg p-3 text-[#1F2937] focus:outline-none focus:ring-2 focus:ring-[#2F855A]" type="date" value={form.endDate} onChange={e=>setForm({...form, endDate:e.target.value})} />
+          <input className="bg-white border border-[#E5E7EB] rounded-lg p-3 text-[#1F2937] placeholder-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#2F855A]" placeholder="Image URL (optional)" value={form.imageUrl} onChange={e=>setForm({...form, imageUrl:e.target.value})} />
           <div className="flex items-center gap-3">
-            <label className="glass-button cursor-pointer">
-              Upload Image
+            <label className="btn-secondary cursor-pointer flex-1 text-center">
+              Upload image
               <input type="file" accept="image/*" onChange={onUpload} className="hidden" />
             </label>
-            {uploading && <span className="text-gray-300 text-sm">Uploading...</span>}
+            {uploading && <span className="text-[#6B7280] text-sm">Uploading...</span>}
           </div>
-          <textarea className="bg-white/10 border border-white/20 rounded-lg p-3 text-white md:col-span-4" rows={4} placeholder="Description" value={form.description} onChange={e=>setForm({...form, description:e.target.value})} required />
+          <textarea className="bg-white border border-[#E5E7EB] rounded-lg p-3 text-[#1F2937] placeholder-[#9CA3AF] md:col-span-4 focus:outline-none focus:ring-2 focus:ring-[#2F855A]" rows={4} placeholder="Description" value={form.description} onChange={e=>setForm({...form, description:e.target.value})} required />
           <div className="md:col-span-4 flex gap-3">
-            <button disabled={submitting} className="glass-button">{form.id ? 'Update' : 'Create'}</button>
+            <button disabled={submitting} className="donate-btn disabled:opacity-50">{form.id ? 'Update' : 'Create'}</button>
             {form.id && (
-              <button type="button" className="glass-button bg-gray-500/20" onClick={()=>setForm(emptyForm)}>Cancel</button>
+              <button type="button" className="btn-secondary" onClick={()=>setForm(emptyForm)}>Cancel</button>
             )}
           </div>
         </form>
       </motion.div>
 
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-6">
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="trust-card p-6">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl text-white font-semibold">All Campaigns</h2>
+          <div>
+            <p className="text-sm font-semibold text-[#2F855A]">Overview</p>
+            <h2 className="text-xl text-[#1F2937] font-semibold">All campaigns</h2>
+          </div>
           <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-300">
+            <span className="text-sm text-[#6B7280]">
               Sorted by: {sort === 'id,asc' ? 'ID (1-5)' : 
                         sort === 'id,desc' ? 'ID (5-1)' :
                         sort === 'createdAt,desc' ? 'Newest First' :
@@ -246,11 +317,11 @@ export default function AdminCampaigns() {
           </div>
         </div>
         {loading ? (
-          <div className="text-gray-300">Loading...</div>
+          <div className="text-[#6B7280]">Loading...</div>
         ) : (
           <div className="overflow-auto">
-            <table className="min-w-full text-sm text-gray-200">
-              <thead>
+            <table className="min-w-full text-sm text-[#1F2937]">
+              <thead className="bg-[#F9FAF9] text-[#4B5563]">
                 <tr className="text-left">
                   <th className="p-2">S.No</th>
                   <th className="p-2">Title</th>
@@ -262,122 +333,120 @@ export default function AdminCampaigns() {
               </thead>
               <tbody>
                 {campaigns.map((c, idx) => (
-                  <tr key={c.id} className="border-t border-white/10">
+                  <tr key={c.id} className="border-t border-[#E5E7EB]">
                     <td className="p-2">{page * size + idx + 1}</td>
-                    <td className="p-2">{c.title}</td>
+                    <td className="p-2 font-medium">{c.title}</td>
                     <td className="p-2">{String(c.active)}</td>
                     <td className="p-2">{formatINR(c.currentAmount)}</td>
-                    <td className="p-2">{formatINR(c.goalAmount)}</td>
-                    <td className="p-2 flex gap-2">
-                      <button className="glass-button bg-blue-500/20" onClick={()=>onEdit(c)}>Edit</button>
+                    <td className="p-2">{formatINR(c.targetAmount)}</td>
+                    <td className="p-2 flex flex-wrap gap-2">
+                      <button className="btn-secondary" onClick={()=>onEdit(c)}>Edit</button>
                       <button 
-                        className="glass-button bg-purple-500/20" 
+                        className="btn-secondary" 
                         onClick={()=>navigate(`/campaigns/${c.id}/analytics`)}
                       >
                         Analytics
                       </button>
                       <button 
-                        className={`glass-button ${c.active ? 'bg-orange-500/20' : 'bg-green-500/20'}`} 
+                        className={`px-3 py-2 rounded-lg font-semibold border text-sm ${c.active ? 'bg-orange-50 text-orange-700 border-orange-200' : 'bg-[#EDF7F1] text-[#2F855A] border-[#C6F6D5]'}`} 
                         onClick={()=>onToggleStatus(c.id, c.title, c.active)}
                       >
                         {c.active ? 'Disable' : 'Enable'}
                       </button>
-                      <button className="glass-button bg-red-500/20" onClick={()=>onDelete(c.id, c.title)}>Delete</button>
-                      <button className="glass-button bg-indigo-500/20" onClick={()=>handleNotifyClick(c)}>
+                      <button className="px-3 py-2 rounded-lg font-semibold border border-red-200 text-red-700 bg-red-50" onClick={()=>onDelete(c.id, c.title)}>Delete</button>
+                      <button className="px-3 py-2 rounded-lg font-semibold border border-[#E0E7FF] text-[#1D4ED8] bg-[#EEF2FF]" onClick={()=>handleNotifyClick(c)}>
                         Notify
                       </button>
-      {/* Notify Confirmation Modal */}
-      {showNotifyModal && notifyCampaign && (
-        <div className="fixed inset-0 flex items-center justify-center z-50">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-purple-900/90 backdrop-blur-sm border border-purple-500/30 rounded-lg p-6 max-w-md mx-4"
-          >
-            <div className="text-center">
-              <div className="w-16 h-16 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V4a2 2 0 10-4 0v1.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-bold text-white mb-2">Notify All Users</h3>
-              <p className="text-gray-300 mb-2">
-                Are you sure you want to notify all users about:
-              </p>
-              <p className="text-white font-semibold mb-4">&quot;{notifyCampaign.title}&quot;</p>
-              <div className="flex gap-3 justify-center">
-                <button
-                  onClick={() => {
-                    setShowNotifyModal(false)
-                    setNotifyCampaign(null)
-                  }}
-                  className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={confirmNotify}
-                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-                >
-                  Confirm Notify
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      )}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            <div className="flex justify-between items-center mt-4 text-gray-300">
-              <button disabled={page===0} className="glass-button disabled:opacity-50" onClick={()=>setPage(p=>Math.max(0,p-1))}>Previous</button>
+            <div className="flex justify-between items-center mt-4 text-[#6B7280]">
+              <button disabled={page===0} className="btn-secondary disabled:opacity-50" onClick={()=>setPage(p=>Math.max(0,p-1))}>Previous</button>
               <span>Page {page+1} of {Math.max(1,totalPages)}</span>
-              <button disabled={page+1>=totalPages} className="glass-button disabled:opacity-50" onClick={()=>setPage(p=>p+1)}>Next</button>
+              <button disabled={page+1>=totalPages} className="btn-secondary disabled:opacity-50" onClick={()=>setPage(p=>p+1)}>Next</button>
             </div>
           </div>
         )}
       </motion.div>
 
+      {/* Notify Confirmation Modal */}
+      {showNotifyModal && notifyCampaign && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.97 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="trust-card max-w-md w-full"
+          >
+            <div className="flex items-start gap-3">
+              <div className="w-12 h-12 rounded-full bg-[#EEF2FF] flex items-center justify-center text-[#4F46E5]">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V4a2 2 0 10-4 0v1.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-[#1F2937]">Notify all users</h3>
+                <p className="text-[#4B5563] mt-1">Send a broadcast about this campaign.</p>
+                <p className="text-[#111827] font-semibold mt-2">“{notifyCampaign.title}”</p>
+                <div className="flex gap-3 justify-end mt-4">
+                  <button
+                    onClick={() => {
+                      setShowNotifyModal(false)
+                      setNotifyCampaign(null)
+                    }}
+                    className="btn-secondary"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={confirmNotify}
+                    className="donate-btn"
+                  >
+                    Confirm notify
+                  </button>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
           <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
+            initial={{ opacity: 0, scale: 0.97 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-red-900/90 backdrop-blur-sm border border-red-500/30 rounded-lg p-6 max-w-md mx-4"
+            className="trust-card max-w-md w-full"
           >
-            <div className="text-center">
-              <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="flex items-start gap-3">
+              <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center text-red-600">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-white mb-2">Delete Campaign</h3>
-              <p className="text-gray-300 mb-2">
-                Are you sure you want to permanently delete:
-              </p>
-              <p className="text-white font-semibold mb-4">&quot;{selectedCampaign?.title}&quot;</p>
-              <p className="text-red-300 text-sm mb-6">
-                ⚠️ This action cannot be undone and will delete all associated donations!
-              </p>
-              <div className="flex gap-3 justify-center">
-                <button
-                  onClick={() => {
-                    setShowDeleteModal(false)
-                    setSelectedCampaign(null)
-                  }}
-                  className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={confirmDelete}
-                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                >
-                  Delete Permanently
-                </button>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-[#1F2937]">Delete campaign</h3>
+                <p className="text-[#4B5563] mt-1">This cannot be undone. All donations linked to it will be removed.</p>
+                <p className="text-[#111827] font-semibold mt-2">“{selectedCampaign?.title}”</p>
+                <div className="flex gap-3 justify-end mt-4">
+                  <button
+                    onClick={() => {
+                      setShowDeleteModal(false)
+                      setSelectedCampaign(null)
+                    }}
+                    className="btn-secondary"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={confirmDelete}
+                    className="px-4 py-2 rounded-lg font-semibold border border-red-200 text-red-700 bg-red-50"
+                  >
+                    Delete permanently
+                  </button>
+                </div>
               </div>
             </div>
           </motion.div>
@@ -386,69 +455,55 @@ export default function AdminCampaigns() {
 
       {/* Toggle Status Confirmation Modal */}
       {showToggleModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
           <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
+            initial={{ opacity: 0, scale: 0.97 }}
             animate={{ opacity: 1, scale: 1 }}
-            className={`backdrop-blur-sm border rounded-lg p-6 max-w-md mx-4 ${
-              actionType === 'disable' 
-                ? 'bg-orange-900/90 border-orange-500/30' 
-                : 'bg-green-900/90 border-green-500/30'
-            }`}
+            className="trust-card max-w-md w-full"
           >
-            <div className="text-center">
-              <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${
-                actionType === 'disable' 
-                  ? 'bg-orange-500/20' 
-                  : 'bg-green-500/20'
+            <div className="flex items-start gap-3">
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                actionType === 'disable' ? 'bg-orange-50 text-orange-700' : 'bg-green-50 text-green-700'
               }`}>
                 {actionType === 'disable' ? (
-                  <svg className="w-8 h-8 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L5.636 5.636" />
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636" />
                   </svg>
                 ) : (
-                  <svg className="w-8 h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 )}
               </div>
-              <h3 className="text-xl font-bold text-white mb-2">
-                {actionType === 'disable' ? 'Disable' : 'Enable'} Campaign
-              </h3>
-              <p className="text-gray-300 mb-2">
-                Are you sure you want to {actionType}:
-              </p>
-              <p className="text-white font-semibold mb-4">&quot;{selectedCampaign?.title}&quot;</p>
-              <p className={`text-sm mb-6 ${
-                actionType === 'disable' 
-                  ? 'text-orange-300' 
-                  : 'text-green-300'
-              }`}>
-                {actionType === 'disable' 
-                  ? '🔒 This campaign will no longer accept donations' 
-                  : '✅ This campaign will start accepting donations again'}
-              </p>
-              <div className="flex gap-3 justify-center">
-                <button
-                  onClick={() => {
-                    setShowToggleModal(false)
-                    setSelectedCampaign(null)
-                    setActionType('')
-                  }}
-                  className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={confirmToggle}
-                  className={`px-4 py-2 text-white rounded-lg transition-colors ${
-                    actionType === 'disable'
-                      ? 'bg-orange-600 hover:bg-orange-700'
-                      : 'bg-green-600 hover:bg-green-700'
-                  }`}
-                >
-                  {actionType === 'disable' ? 'Disable Campaign' : 'Enable Campaign'}
-                </button>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-[#1F2937]">
+                  {actionType === 'disable' ? 'Disable campaign' : 'Enable campaign'}
+                </h3>
+                <p className="text-[#4B5563] mt-1">Are you sure you want to {actionType} this campaign?</p>
+                <p className="text-[#111827] font-semibold mt-2">“{selectedCampaign?.title}”</p>
+                <p className={`text-sm mt-2 ${actionType === 'disable' ? 'text-orange-700' : 'text-green-700'}`}>
+                  {actionType === 'disable' 
+                    ? 'This campaign will stop accepting donations.' 
+                    : 'This campaign will start accepting donations again.'}
+                </p>
+                <div className="flex gap-3 justify-end mt-4">
+                  <button
+                    onClick={() => {
+                      setShowToggleModal(false)
+                      setSelectedCampaign(null)
+                      setActionType('')
+                    }}
+                    className="btn-secondary"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={confirmToggle}
+                    className={`px-4 py-2 rounded-lg font-semibold border text-sm ${actionType === 'disable' ? 'bg-orange-50 text-orange-700 border-orange-200' : 'bg-[#EDF7F1] text-[#2F855A] border-[#C6F6D5]'}`}
+                  >
+                    {actionType === 'disable' ? 'Disable campaign' : 'Enable campaign'}
+                  </button>
+                </div>
               </div>
             </div>
           </motion.div>

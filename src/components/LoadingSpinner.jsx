@@ -2,11 +2,11 @@ import { motion } from 'framer-motion'
 
 const LoadingSpinner = () => {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+    <div className="min-h-screen calm-bg flex items-center justify-center">
       <motion.div
-        className="w-16 h-16 border-4 border-white/20 border-t-white rounded-full"
+        className="w-12 h-12 border-4 border-[#C6F6D5] border-t-[#2F855A] rounded-full"
         animate={{ rotate: 360 }}
-        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+        transition={{ duration: 0.9, repeat: Infinity, ease: 'linear' }}
       />
     </div>
   )
