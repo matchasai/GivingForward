@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.example.fundapp.dto.ChangePasswordRequest;
+import com.example.fundapp.dto.UpdateProfileRequest;
 import com.example.fundapp.model.PasswordResetToken;
 import com.example.fundapp.model.User;
 import com.example.fundapp.repository.PasswordResetTokenRepository;
@@ -30,6 +31,27 @@ public class UserAccountService {
     @Autowired
     private EmailService emailService;
 
+    @Autowired
+    private NotificationService notificationService;
+
+    public User updateProfile(User user, UpdateProfileRequest request) {
+        if (user == null)
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Not authenticated");
+        
+        // Check if email is already taken by another user
+        if (!user.getEmail().equals(request.getEmail())) {
+            userRepository.findByEmail(request.getEmail()).ifPresent(existingUser -> {
+                if (!existingUser.getId().equals(user.getId())) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email already in use");
+                }
+            });
+        }
+
+        user.setName(request.getName());
+        user.setEmail(request.getEmail());
+        return userRepository.save(user);
+    }
+
     public void changePassword(User user, ChangePasswordRequest request) {
         if (user == null)
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Not authenticated");
@@ -38,6 +60,9 @@ public class UserAccountService {
         }
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
+        
+        // Notify user about password change
+        notificationService.notifyPasswordChanged(user);
     }
 
     public void initiatePasswordReset(String email) {

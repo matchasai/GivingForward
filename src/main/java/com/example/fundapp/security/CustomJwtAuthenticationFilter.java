@@ -38,6 +38,13 @@ public class CustomJwtAuthenticationFilter extends OncePerRequestFilter {
 
         String requestURI = request.getRequestURI();
 
+        // Always allow CORS preflight through without JWT processing.
+        // Authorization decisions for preflight are handled by the security config.
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            chain.doFilter(request, response);
+            return;
+        }
+
         // Skip JWT processing for most public endpoints
         if (isPublicEndpoint(requestURI)) {
             chain.doFilter(request, response);
@@ -58,18 +65,9 @@ public class CustomJwtAuthenticationFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(authentication);
                 // authentication set
             } else if (StringUtils.hasText(jwt)) {
-                // Token was provided but is invalid/expired -> signal client to refresh
-                // invalid/expired token; return 401 with JSON body to help the frontend
-                response.setStatus(401);
-                response.setHeader("X-Error-Reason", "invalid-token");
-                response.setHeader("WWW-Authenticate", "Bearer error=invalid_token");
-                response.setContentType("application/json;charset=UTF-8");
-                try {
-                    String body = "{\"message\":\"Invalid or expired token\",\"error\":\"invalid-token\"}";
-                    response.getWriter().write(body);
-                } catch (Exception ignored) {
-                }
-                return;
+                // If a token is present but invalid/expired, do NOT short-circuit here.
+                // Let Spring Security authorization decide (permitAll endpoints should still work).
+                SecurityContextHolder.clearContext();
             }
         } catch (Exception e) {
             // swallow exception and continue unauthenticated
@@ -85,6 +83,9 @@ public class CustomJwtAuthenticationFilter extends OncePerRequestFilter {
                 requestURI.startsWith("/api/test/") ||
                 requestURI.equals("/api/campaigns/active") ||
                 requestURI.startsWith("/uploads/") ||
+                // Allow anonymous donations via Razorpay endpoints
+                requestURI.equals("/api/payments/create-order") ||
+                requestURI.equals("/api/payments/verify") ||
                 // Allow public access to campaign list/details and donations by campaign
                 requestURI.startsWith("/api/campaigns") ||
                 requestURI.startsWith("/api/donations/campaign/");

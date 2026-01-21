@@ -21,6 +21,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.servlet.http.HttpServletResponse;
+
+import java.io.IOException;
+import java.io.PrintWriter;
+
 import com.example.fundapp.dto.AdminUserRequest;
 import com.example.fundapp.dto.UserDto;
 import com.example.fundapp.model.User;
@@ -175,5 +180,25 @@ public class AdminUserController {
 
     private UserDto toDto(User u) {
         return new UserDto(u.getId(), u.getName(), u.getEmail(), u.getRole().name(), u.getCreatedAt());
+    }
+
+    @GetMapping("/export/csv")
+    public void exportUsersToCSV(HttpServletResponse response) throws IOException {
+        response.setContentType("text/csv");
+        response.setHeader("Content-Disposition", "attachment; filename=\"users_export.csv\"");
+        
+        PrintWriter writer = response.getWriter();
+        writer.println("ID,Name,Email,Role,Created At");
+        
+        userRepository.findAll().forEach(user -> {
+            writer.printf("\"%s\",\"%s\",\"%s\",\"%s\",\"%s\"%n",
+                    user.getId(),
+                    user.getName().replace("\"", "\"\""),
+                    user.getEmail().replace("\"", "\"\""),
+                    user.getRole().name(),
+                    user.getCreatedAt().toString());
+        });
+        
+        writer.flush();
     }
 }

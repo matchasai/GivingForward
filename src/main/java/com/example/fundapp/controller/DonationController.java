@@ -19,6 +19,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.PrintWriter;
+
 import com.example.fundapp.dto.DonationDto;
 import com.example.fundapp.dto.DonationRequest;
 import com.example.fundapp.model.Donation;
@@ -29,7 +33,6 @@ import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/donations")
-@CrossOrigin(origins = "*")
 public class DonationController {
 
     @Autowired
@@ -116,6 +119,34 @@ public class DonationController {
                 d.getId(), uId, uName, uEmail, cId, cTitle, d.getAmount(),
                 d.getPaymentStatus() != null ? d.getPaymentStatus().name() : null,
                 d.getDonatedAt());
+    }
+
+    @GetMapping("/export/csv")
+    @PreAuthorize("hasRole('ADMIN')")
+    public void exportDonationsToCSV(HttpServletResponse response) throws IOException {
+        response.setContentType("text/csv");
+        response.setHeader("Content-Disposition", "attachment; filename=\"donations_export.csv\"");
+        
+        PrintWriter writer = response.getWriter();
+        writer.println("ID,User Name,User Email,Campaign,Amount,Payment Status,Donated At");
+        
+        donationRepository.findAll().forEach(donation -> {
+            String userName = donation.getUser() != null ? donation.getUser().getName() : "Anonymous";
+            String userEmail = donation.getUser() != null ? donation.getUser().getEmail() : "";
+            String campaignTitle = donation.getCampaign() != null ? donation.getCampaign().getTitle() : "";
+            String status = donation.getPaymentStatus() != null ? donation.getPaymentStatus().name() : "";
+            
+            writer.printf("\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\"%n",
+                    donation.getId(),
+                    userName.replace("\"", "\"\""),
+                    userEmail.replace("\"", "\"\""),
+                    campaignTitle.replace("\"", "\"\""),
+                    donation.getAmount().toString(),
+                    status,
+                    donation.getDonatedAt().toString());
+        });
+        
+        writer.flush();
     }
 
     // Note: if public anonymity is desired later, reintroduce an anonymized mapper.

@@ -145,7 +145,19 @@ public class PaymentController {
         Map<String, Object> orderPayload = new HashMap<>();
         orderPayload.put("amount", amountPaise);
         orderPayload.put("currency", "INR");
-        orderPayload.put("receipt", "rcpt_" + body.campaignId + "_" + System.currentTimeMillis());
+        // Razorpay enforces a max length on the receipt field (commonly 40 chars).
+        // Our campaignId is a Mongo ObjectId (24 chars) and adding a millisecond timestamp can exceed the limit,
+        // which results in a 400 from Razorpay. Keep it short, unique-ish, and non-sensitive.
+        String shortCampaign = body.campaignId;
+        if (shortCampaign != null && shortCampaign.length() > 10) {
+            shortCampaign = shortCampaign.substring(shortCampaign.length() - 10);
+        }
+        String ts = Long.toString(System.currentTimeMillis(), 36);
+        String receipt = "rcpt_" + (shortCampaign == null ? "campaign" : shortCampaign) + "_" + ts;
+        if (receipt.length() > 40) {
+            receipt = receipt.substring(0, 40);
+        }
+        orderPayload.put("receipt", receipt);
 
         String json = objectMapper.writeValueAsString(orderPayload);
 

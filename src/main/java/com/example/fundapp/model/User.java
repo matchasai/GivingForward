@@ -36,6 +36,10 @@ public class User implements UserDetails {
     private Role role = Role.USER;
 
     private boolean notificationsEnabled = true;
+    
+    private boolean emailVerified = false;
+    
+    private String emailVerificationToken;
 
     private LocalDateTime createdAt = LocalDateTime.now();
 
@@ -100,6 +104,22 @@ public class User implements UserDetails {
 
     public void setNotificationsEnabled(boolean notificationsEnabled) {
         this.notificationsEnabled = notificationsEnabled;
+    }
+
+    public boolean isEmailVerified() {
+        return emailVerified;
+    }
+
+    public void setEmailVerified(boolean emailVerified) {
+        this.emailVerified = emailVerified;
+    }
+
+    public String getEmailVerificationToken() {
+        return emailVerificationToken;
+    }
+
+    public void setEmailVerificationToken(String emailVerificationToken) {
+        this.emailVerificationToken = emailVerificationToken;
     }
 
     public LocalDateTime getCreatedAt() {

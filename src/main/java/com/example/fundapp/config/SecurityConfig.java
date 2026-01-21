@@ -44,9 +44,15 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
+                    // Allow browser CORS preflight requests
+                    .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/account/password-reset/**").permitAll()
-                        .requestMatchers("/api/payments/**").authenticated()
+                    // Payments must work for anonymous donors too.
+                    // Keep the rest of /api/payments protected by default.
+                    .requestMatchers(HttpMethod.POST, "/api/payments/create-order").permitAll()
+                    .requestMatchers(HttpMethod.POST, "/api/payments/verify").permitAll()
+                    .requestMatchers("/api/payments/**").authenticated()
                         .requestMatchers("/api/public/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/donations/campaign/**").permitAll()
                         .requestMatchers("/api/campaigns/active").permitAll()

@@ -41,6 +41,9 @@ public class AuthService {
     @Autowired
     private RefreshTokenRepository refreshTokenRepository;
 
+    @Autowired
+    private EmailService emailService;
+
     public AuthResponse login(LoginRequest loginRequest) {
         try {
             Authentication authentication = authenticationManager.authenticate(
@@ -65,11 +68,44 @@ public class AuthService {
         user.setEmail(registerRequest.getEmail());
         user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
         user.setRole(User.Role.USER);
+        user.setEmailVerified(false);
+        user.setEmailVerificationToken(UUID.randomUUID().toString());
         User savedUser = userRepository.save(user);
+        
+        // Send verification email
+        emailService.sendVerificationEmail(savedUser.getEmail(), savedUser.getEmailVerificationToken());
+        
         String jwt = tokenProvider.generateToken(savedUser);
         RefreshToken rt = createRefreshToken(savedUser);
         return new AuthResponse(jwt, savedUser.getId(), savedUser.getName(), savedUser.getEmail(),
                 savedUser.getRole().name()).withRefresh(rt.getToken(), rt.getExpiresAt());
+    }
+
+    public void verifyEmail(String token) {
+        User user = userRepository.findAll().stream()
+                .filter(u -> token.equals(u.getEmailVerificationToken()))
+                .findFirst()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid verification token"));
+        
+        user.setEmailVerified(true);
+        user.setEmailVerificationToken(null);
+        userRepository.save(user);
+    }
+
+    public void resendVerificationEmail(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+        
+        if (user.isEmailVerified()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email already verified");
+        }
+        
+        if (user.getEmailVerificationToken() == null) {
+            user.setEmailVerificationToken(UUID.randomUUID().toString());
+            userRepository.save(user);
+        }
+        
+        emailService.sendVerificationEmail(user.getEmail(), user.getEmailVerificationToken());
     }
 
     private RefreshToken createRefreshToken(User user) {
