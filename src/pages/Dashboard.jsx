@@ -161,15 +161,30 @@ const Dashboard = () => {
                     </div>
                   </div>
                   
-                  <div className="text-right">
+                  <div className="text-right flex flex-col items-end space-y-2">
                     <p className="text-green-400 font-bold text-lg">{formatINR(donation.amount)}</p>
-                    <span className={`text-xs px-2 py-1 rounded-full ${
-                      donation.paymentStatus === 'PAID' 
-                        ? 'bg-green-500/20 text-green-400' 
-                        : 'bg-yellow-500/20 text-yellow-400'
-                    }`}>
-                      {donation.paymentStatus}
-                    </span>
+                    <div className="flex items-center space-x-2">
+                      <span className={`text-xs px-2 py-1 rounded-full ${
+                        donation.paymentStatus === 'PAID' 
+                          ? 'bg-green-500/20 text-green-400' 
+                          : 'bg-yellow-500/20 text-yellow-400'
+                      }`}>
+                        {donation.paymentStatus}
+                      </span>
+                      {donation.paymentStatus === 'PAID' && (
+                        <a
+                          href={`/api/donations/${donation.id}/receipt`}
+                          download
+                          className="text-xs px-3 py-1 bg-blue-500/20 text-blue-400 rounded-full hover:bg-blue-500/30 transition-colors flex items-center space-x-1"
+                          title="Download Receipt"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                          <span>PDF</span>
+                        </a>
+                      )}
+                    </div>
                   </div>
                 </motion.div>
               ))}

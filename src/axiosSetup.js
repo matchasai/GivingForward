@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-// Prefer explicit API base URL from environment (Vite)
+// Prefer explicit API base URL from environment (Vite uses import.meta.env)
 const envBase = (import.meta && import.meta.env && import.meta.env.VITE_API_BASE_URL) || '/';
 
 // Normalize to ensure a single trailing slash behavior
@@ -67,7 +67,11 @@ axios.interceptors.response.use(
           localStorage.removeItem('token');
           localStorage.removeItem('user');
           localStorage.removeItem('refreshToken');
-          try { window.location.assign('/login'); } catch (_) {}
+          try {
+            window.location.assign('/login')
+          } catch (redirectErr) {
+            console.warn('Redirect to login failed:', redirectErr)
+          }
           throw error;
         }
         const res = await axios.post('/api/auth/refresh', { refreshToken });
@@ -83,7 +87,11 @@ axios.interceptors.response.use(
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         localStorage.removeItem('refreshToken');
-        try { window.location.assign('/login'); } catch (_) {}
+        try {
+          window.location.assign('/login')
+        } catch (redirectErr) {
+          console.warn('Redirect to login failed:', redirectErr)
+        }
         return Promise.reject(err);
       } finally {
         isRefreshing = false;
@@ -93,7 +101,9 @@ axios.interceptors.response.use(
     try {
       const msg = error.response?.data?.message || error.message || 'Request failed';
       window.dispatchEvent(new CustomEvent('app:error', { detail: { message: msg } }))
-    } catch (_) {}
+    } catch (eventErr) {
+      console.warn('Error dispatching app:error event:', eventErr)
+    }
     return Promise.reject(error);
   }
 );

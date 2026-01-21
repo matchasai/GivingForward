@@ -50,11 +50,11 @@ export default function ForgotPassword() {
             </div>
             <h2 className="text-2xl font-bold text-white mb-4">Check Your Email</h2>
             <p className="text-gray-300 mb-6">
-              We've sent a password reset link to <strong>{email}</strong>. 
+              We&apos;ve sent a password reset link to <strong>{email}</strong>. 
               Please check your email and follow the instructions to reset your password.
             </p>
             <p className="text-sm text-gray-400 mb-6">
-              Didn't receive the email? Check your spam folder or try again in a few minutes.
+              Didn&apos;t receive the email? Check your spam folder or try again in a few minutes.
             </p>
             <div className="space-y-3">
               <button
@@ -89,7 +89,7 @@ export default function ForgotPassword() {
           </div>
           <h2 className="text-2xl font-bold text-white mb-2">Forgot Password?</h2>
           <p className="text-gray-300">
-            Enter your email address and we'll send you a link to reset your password.
+            Enter your email address and we&apos;ll send you a link to reset your password.
           </p>
         </div>
 

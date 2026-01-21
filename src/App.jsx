@@ -9,6 +9,7 @@ import { useAuth } from './contexts/AuthContext'
 import AdminCampaigns from './pages/AdminCampaigns'
 import AdminDashboard from './pages/AdminDashboard'
 import AdminUsers from './pages/AdminUsers'
+import CampaignAnalytics from './pages/CampaignAnalytics'
 import CampaignDetail from './pages/CampaignDetail'
 import Campaigns from './pages/Campaigns'
 import Dashboard from './pages/Dashboard'
@@ -25,8 +26,6 @@ function App() {
     return <LoadingSpinner />
   }
 
-  const isAdmin = user?.role === 'ADMIN'
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
@@ -41,6 +40,7 @@ function App() {
             <Route path="/reset-password" element={!user ? <ResetPassword /> : <Navigate to="/" />} />
             <Route path="/campaigns" element={<Campaigns />} />
             <Route path="/campaigns/:id" element={<CampaignDetail />} />
+            <Route path="/campaigns/:id/analytics" element={<AdminRoute><CampaignAnalytics /></AdminRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
             <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />

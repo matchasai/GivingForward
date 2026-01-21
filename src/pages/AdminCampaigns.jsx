@@ -1,12 +1,14 @@
 import axios from 'axios'
 import { motion } from 'framer-motion'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { formatINR } from '../utils/currency'
 
 const emptyForm = { id: null, title: '', description: '', targetAmount: '', imageUrl: '' }
 
 export default function AdminCampaigns() {
+  const navigate = useNavigate()
   const [showNotifyModal, setShowNotifyModal] = useState(false)
   const [notifyCampaign, setNotifyCampaign] = useState(null)
 
@@ -47,6 +49,27 @@ export default function AdminCampaigns() {
   const [selectedCampaign, setSelectedCampaign] = useState(null)
   const [actionType, setActionType] = useState('')
 
+  const loadCampaigns = useCallback(async () => {
+    setLoading(true)
+    try {
+      const params = { page, size, sort }
+      if (search) params.search = search
+      if (active !== '') params.active = active === 'true'
+      const res = await axios.get('/api/campaigns', { params })
+      const data = res.data
+      setCampaigns(data.content || [])
+      setTotalPages(data.totalPages || 0)
+    } catch (error) {
+      console.error('Failed to load campaigns:', error)
+    } finally {
+      setLoading(false)
+    }
+  }, [active, page, search, size, sort])
+
+  useEffect(() => {
+    loadCampaigns()
+  }, [loadCampaigns])
+
   // Check if user is authenticated and has admin role
   if (!user || !token || user.role !== 'ADMIN') {
     return (
@@ -58,25 +81,6 @@ export default function AdminCampaigns() {
       </div>
     )
   }
-
-  const loadCampaigns = async () => {
-    setLoading(true)
-    try {
-      const params = { page, size, sort }
-      if (search) params.search = search
-      if (active !== '') params.active = active === 'true'
-      const res = await axios.get('/api/campaigns', { params })
-      const data = res.data
-      setCampaigns(data.content || [])
-      setTotalPages(data.totalPages || 0)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    loadCampaigns()
-  }, [page, size, sort])
 
   const handleSortChange = (newSort) => {
     setSort(newSort)
@@ -100,6 +104,8 @@ export default function AdminCampaigns() {
       }
       setForm(emptyForm)
       await loadCampaigns()
+    } catch (error) {
+      console.error('Failed to save campaign:', error)
     } finally {
       setSubmitting(false)
     }
@@ -115,7 +121,7 @@ export default function AdminCampaigns() {
   }
 
   const confirmDelete = async () => {
-    const { id, title } = selectedCampaign
+    const { id } = selectedCampaign
     try {
       await axios.delete(`/api/campaigns/${id}`)
       // Refresh the campaigns list
@@ -138,7 +144,7 @@ export default function AdminCampaigns() {
   }
 
   const confirmToggle = async () => {
-    const { id, title } = selectedCampaign
+    const { id } = selectedCampaign
     const action = actionType
     
     try {
@@ -164,6 +170,8 @@ export default function AdminCampaigns() {
       fd.append('file', file)
       const res = await axios.post('/api/uploads/image', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
       setForm({ ...form, imageUrl: res.data.url })
+    } catch (error) {
+      console.error('Failed to upload image:', error)
     } finally {
       setUploading(false)
     }
@@ -263,13 +271,19 @@ export default function AdminCampaigns() {
                     <td className="p-2 flex gap-2">
                       <button className="glass-button bg-blue-500/20" onClick={()=>onEdit(c)}>Edit</button>
                       <button 
+                        className="glass-button bg-purple-500/20" 
+                        onClick={()=>navigate(`/campaigns/${c.id}/analytics`)}
+                      >
+                        Analytics
+                      </button>
+                      <button 
                         className={`glass-button ${c.active ? 'bg-orange-500/20' : 'bg-green-500/20'}`} 
                         onClick={()=>onToggleStatus(c.id, c.title, c.active)}
                       >
                         {c.active ? 'Disable' : 'Enable'}
                       </button>
                       <button className="glass-button bg-red-500/20" onClick={()=>onDelete(c.id, c.title)}>Delete</button>
-                      <button className="glass-button bg-purple-500/20" onClick={()=>handleNotifyClick(c)}>
+                      <button className="glass-button bg-indigo-500/20" onClick={()=>handleNotifyClick(c)}>
                         Notify
                       </button>
       {/* Notify Confirmation Modal */}
@@ -290,7 +304,7 @@ export default function AdminCampaigns() {
               <p className="text-gray-300 mb-2">
                 Are you sure you want to notify all users about:
               </p>
-              <p className="text-white font-semibold mb-4">"{notifyCampaign.title}"</p>
+              <p className="text-white font-semibold mb-4">&quot;{notifyCampaign.title}&quot;</p>
               <div className="flex gap-3 justify-center">
                 <button
                   onClick={() => {
@@ -344,7 +358,7 @@ export default function AdminCampaigns() {
               <p className="text-gray-300 mb-2">
                 Are you sure you want to permanently delete:
               </p>
-              <p className="text-white font-semibold mb-4">"{selectedCampaign?.title}"</p>
+              <p className="text-white font-semibold mb-4">&quot;{selectedCampaign?.title}&quot;</p>
               <p className="text-red-300 text-sm mb-6">
                 ⚠️ This action cannot be undone and will delete all associated donations!
               </p>
@@ -404,7 +418,7 @@ export default function AdminCampaigns() {
               <p className="text-gray-300 mb-2">
                 Are you sure you want to {actionType}:
               </p>
-              <p className="text-white font-semibold mb-4">"{selectedCampaign?.title}"</p>
+              <p className="text-white font-semibold mb-4">&quot;{selectedCampaign?.title}&quot;</p>
               <p className={`text-sm mb-6 ${
                 actionType === 'disable' 
                   ? 'text-orange-300' 

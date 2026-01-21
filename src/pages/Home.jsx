@@ -55,7 +55,7 @@ const Home = () => {
         </h1>
         
         <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-          Join our community of generous donors and help make the world a better place. 
+          Join our community of generous donors and help make the world a better place.
           Every donation counts towards creating positive change.
         </p>
         

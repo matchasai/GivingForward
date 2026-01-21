@@ -1,6 +1,6 @@
 import axios from 'axios'
 import { motion } from 'framer-motion'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 const emptyForm = { id: null, name: '', email: '', password: '', role: 'USER' }
 
@@ -20,7 +20,7 @@ export default function AdminUsers() {
   const [selectedUser, setSelectedUser] = useState(null)
 
   // Fetch Users
-  const loadUsers = async () => {
+  const loadUsers = useCallback(async () => {
     setLoading(true)
     try {
       const params = { page, size, sort }
@@ -35,11 +35,11 @@ export default function AdminUsers() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [page, roleFilter, search, size, sort])
 
   useEffect(() => {
     loadUsers()
-  }, [page, size, sort])
+  }, [loadUsers])
 
   // Create / Update User
   const handleSubmit = async (e) => {

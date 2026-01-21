@@ -1,9 +1,10 @@
 import axios from 'axios'
 import { motion } from 'framer-motion'
 import { ArrowLeft, Calendar, Heart, IndianRupee, Target, User } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import { useNavigate, useParams } from 'react-router-dom'
+import SocialShare from '../components/SocialShare'
 import { useAuth } from '../contexts/AuthContext'
 import { formatINR } from '../utils/currency'
 import { getImageUrl } from '../utils/getImageUrl'
@@ -19,12 +20,7 @@ const CampaignDetail = () => {
   const [showDonationForm, setShowDonationForm] = useState(false)
   const [processingDonation, setProcessingDonation] = useState(false)
 
-  useEffect(() => {
-    fetchCampaign()
-    fetchDonations()
-  }, [id])
-
-  const fetchCampaign = async () => {
+  const fetchCampaign = useCallback(async () => {
     try {
       const response = await axios.get(`/api/campaigns/${id}`)
       setCampaign(response.data)
@@ -35,9 +31,9 @@ const CampaignDetail = () => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [id, navigate])
 
-  const fetchDonations = async () => {
+  const fetchDonations = useCallback(async () => {
     try {
       const response = await axios.get(`/api/donations/campaign/${id}`)
       setDonations(response.data || [])
@@ -46,7 +42,12 @@ const CampaignDetail = () => {
       // Set empty array if error
       setDonations([])
     }
-  }
+  }, [id])
+
+  useEffect(() => {
+    fetchCampaign()
+    fetchDonations()
+  }, [fetchCampaign, fetchDonations])
 
   const handleDonation = async (e) => {
     e.preventDefault()
@@ -112,6 +113,7 @@ const CampaignDetail = () => {
       rzp.open()
     } catch (error) {
       console.error('Error initializing payment:', error)
+      const status = error?.response?.status
       const resData = error?.response?.data
       // Response body may be JSON { message, details } or a plain string. Handle both.
       let msg = 'Failed to initialize payment'
@@ -126,6 +128,12 @@ const CampaignDetail = () => {
       } else if (error?.message) {
         msg = error.message
       }
+
+      // Common hosted-env hint for missing Razorpay keys
+      if ((status === 400 || status === 500) && msg?.toLowerCase().includes('razorpay')) {
+        details = details || 'Server is missing Razorpay keys. Configure RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET and redeploy.'
+      }
+
       toast.error(details ? `${msg}: ${details}` : msg)
       setProcessingDonation(false)
     }
@@ -236,6 +244,15 @@ const CampaignDetail = () => {
                     className="bg-gradient-to-r from-purple-500 to-pink-500 h-3 rounded-full"
                   />
                 </div>
+              </div>
+
+              {/* Social Sharing */}
+              <div className="border-t border-white/10 pt-6">
+                <SocialShare
+                  url={window.location.href}
+                  title={campaign.title}
+                  description={campaign.description}
+                />
               </div>
               
               <div className="flex items-center justify-between text-sm text-gray-400">

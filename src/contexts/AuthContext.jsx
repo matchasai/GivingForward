@@ -3,6 +3,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 
 const AuthContext = createContext();
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
@@ -106,13 +107,17 @@ export const AuthProvider = ({ children }) => {
 
   // Logout: clear user and token
   const logout = () => {
-    try { axios.post('/api/auth/logout'); } catch (_) {}
-    setUser(null);
-    setToken(null);
-    setRefreshToken(null);
-    localStorage.removeItem("user");
-    localStorage.removeItem("token");
-    localStorage.removeItem("refreshToken");
+    try {
+      axios.post('/api/auth/logout')
+    } catch (err) {
+      console.warn('Logout request failed:', err)
+    }
+    setUser(null)
+    setToken(null)
+    setRefreshToken(null)
+    localStorage.removeItem("user")
+    localStorage.removeItem("token")
+    localStorage.removeItem("refreshToken")
   };
 
   return (

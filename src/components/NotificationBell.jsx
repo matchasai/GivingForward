@@ -1,32 +1,45 @@
 import axios from 'axios'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Bell, Check, Trash2, X } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
+import { useAuth } from '../contexts/AuthContext'
 
 const NotificationBell = () => {
+  const { token } = useAuth()
   const [notifications, setNotifications] = useState([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [showDropdown, setShowDropdown] = useState(false)
   const [loading, setLoading] = useState(false)
 
-  useEffect(() => {
-    fetchUnreadCount()
-    // Poll for new notifications every 30 seconds
-    const interval = setInterval(fetchUnreadCount, 30000)
-    return () => clearInterval(interval)
-  }, [])
-
-  const fetchUnreadCount = async () => {
+  const fetchUnreadCount = useCallback(async () => {
+    if (!token) return
     try {
       const { data } = await axios.get('/api/notifications/unread/count')
       setUnreadCount(data.count || 0)
     } catch (error) {
+      if (error?.response?.status === 401) {
+        // Unauthenticated: treat as zero and stop showing noisy errors
+        setUnreadCount(0)
+        return
+      }
       console.error('Failed to fetch unread count:', error)
     }
-  }
+  }, [token])
+
+  useEffect(() => {
+    if (!token) {
+      setUnreadCount(0)
+      return
+    }
+    fetchUnreadCount()
+    // Poll for new notifications every 30 seconds
+    const interval = setInterval(fetchUnreadCount, 30000)
+    return () => clearInterval(interval)
+  }, [token, fetchUnreadCount])
 
   const fetchNotifications = async () => {
+    if (!token) return
     setLoading(true)
     try {
       const { data } = await axios.get('/api/notifications')
