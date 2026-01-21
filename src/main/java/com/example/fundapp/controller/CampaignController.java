@@ -1,6 +1,7 @@
 package com.example.fundapp.controller;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -102,38 +103,17 @@ public class CampaignController {
                 : Sort.by(sortParts[0]).descending();
         Pageable pageable = PageRequest.of(page, size, s);
 
-        var all = campaignRepository.findAll();
-        var filtered = all.stream()
-                .filter(c -> search == null || search.isBlank()
-                        || c.getTitle().toLowerCase().contains(search.toLowerCase()))
-                .filter(c -> active == null || c.isActive() == active)
-                .sorted((a, b) -> {
-                    var sortProp = sortParts[0];
-                    int cmp;
-                    switch (sortProp) {
-                        case "createdAt":
-                            cmp = a.getCreatedAt().compareTo(b.getCreatedAt());
-                            break;
-                        case "title":
-                            cmp = a.getTitle().compareToIgnoreCase(b.getTitle());
-                            break;
-                        case "id":
-                        default:
-                            cmp = String.valueOf(a.getId()).compareTo(String.valueOf(b.getId()));
-                    }
-                    return sortParts.length == 2 && sortParts[1].equalsIgnoreCase("asc") ? cmp : -cmp;
-                })
-                .toList();
-        int start = Math.min((int) pageable.getOffset(), filtered.size());
-        int end = Math.min(start + pageable.getPageSize(), filtered.size());
-        Page<CampaignDto> pageDto = new PageImpl<>(filtered.subList(start, end).stream().map(this::toDto).toList(),
-                pageable, filtered.size());
+        // Delegate filtering to service layer
+        Page<CampaignDto> pageDto = campaignService.getCampaignsWithFilters(pageable, search, active);
         return ResponseEntity.ok(pageDto);
     }
 
-    private CampaignDto toDto(Campaign c) {
-        return new CampaignDto(
-                c.getId(), c.getTitle(), c.getDescription(), c.isActive(), c.getTargetAmount(), c.getCurrentAmount(),
-                c.getCreatedAt());
+    /**
+     * Get analytics data for a specific campaign
+     */
+    @GetMapping("/{id}/analytics")
+    public ResponseEntity<Map<String, Object>> getCampaignAnalytics(@PathVariable String id) {
+        Map<String, Object> analytics = campaignService.getCampaignAnalytics(id);
+        return ResponseEntity.ok(analytics);
     }
 }

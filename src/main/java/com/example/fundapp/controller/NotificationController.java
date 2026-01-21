@@ -28,18 +28,27 @@ public class NotificationController {
 
     @GetMapping
     public ResponseEntity<List<Notification>> getUserNotifications(@AuthenticationPrincipal User user) {
+        if (user == null) {
+            return ResponseEntity.status(401).build();
+        }
         List<Notification> notifications = notificationService.getUserNotifications(user);
         return ResponseEntity.ok(notifications);
     }
 
     @GetMapping("/unread")
     public ResponseEntity<List<Notification>> getUnreadNotifications(@AuthenticationPrincipal User user) {
+        if (user == null) {
+            return ResponseEntity.status(401).build();
+        }
         List<Notification> notifications = notificationService.getUnreadNotifications(user);
         return ResponseEntity.ok(notifications);
     }
 
     @GetMapping("/unread/count")
     public ResponseEntity<Map<String, Long>> getUnreadCount(@AuthenticationPrincipal User user) {
+        if (user == null) {
+            return ResponseEntity.status(401).body(Map.of("count", 0L));
+        }
         long count = notificationService.getUnreadCount(user);
         Map<String, Long> response = new HashMap<>();
         response.put("count", count);
@@ -54,6 +63,9 @@ public class NotificationController {
 
     @PostMapping("/read-all")
     public ResponseEntity<Void> markAllAsRead(@AuthenticationPrincipal User user) {
+        if (user == null) {
+            return ResponseEntity.status(401).build();
+        }
         notificationService.markAllAsRead(user);
         return ResponseEntity.ok().build();
     }
@@ -66,6 +78,9 @@ public class NotificationController {
 
     @DeleteMapping
     public ResponseEntity<Void> deleteAllNotifications(@AuthenticationPrincipal User user) {
+        if (user == null) {
+            return ResponseEntity.status(401).build();
+        }
         notificationService.deleteAllUserNotifications(user);
         return ResponseEntity.ok().build();
     }

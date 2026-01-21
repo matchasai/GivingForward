@@ -14,6 +14,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.example.fundapp.constants.AppConstants;
 import com.example.fundapp.dto.AuthResponse;
 import com.example.fundapp.dto.LoginRequest;
 import com.example.fundapp.dto.RegisterRequest;
@@ -61,7 +62,7 @@ public class AuthService {
 
     public AuthResponse register(RegisterRequest registerRequest) {
         if (userRepository.existsByEmail(registerRequest.getEmail())) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already exists");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, AppConstants.MSG_EMAIL_EXISTS);
         }
         User user = new User();
         user.setName(registerRequest.getName());
@@ -94,10 +95,10 @@ public class AuthService {
 
     public void resendVerificationEmail(String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, AppConstants.MSG_USER_NOT_FOUND));
         
         if (user.isEmailVerified()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email already verified");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, AppConstants.MSG_EMAIL_VERIFIED);
         }
         
         if (user.getEmailVerificationToken() == null) {

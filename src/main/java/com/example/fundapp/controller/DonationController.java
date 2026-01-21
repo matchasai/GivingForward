@@ -8,6 +8,9 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -18,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -28,6 +32,7 @@ import com.example.fundapp.dto.DonationRequest;
 import com.example.fundapp.model.Donation;
 import com.example.fundapp.repository.DonationRepository;
 import com.example.fundapp.service.DonationService;
+import com.example.fundapp.service.ReceiptService;
 
 import jakarta.validation.Valid;
 
@@ -40,6 +45,9 @@ public class DonationController {
 
     @Autowired
     private DonationRepository donationRepository;
+
+    @Autowired
+    private ReceiptService receiptService;
 
     @PostMapping
     public ResponseEntity<Donation> makeDonation(@Valid @RequestBody DonationRequest request) {
@@ -147,6 +155,29 @@ public class DonationController {
         });
         
         writer.flush();
+    }
+
+    /**
+     * Download PDF receipt for a specific donation
+     */
+    @GetMapping("/{id}/receipt")
+    public ResponseEntity<byte[]> downloadReceipt(@PathVariable String id) {
+        try {
+            Donation donation = donationRepository.findById(id)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Donation not found"));
+            
+            byte[] pdfContent = receiptService.generateReceipt(donation);
+            
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_PDF);
+            headers.setContentDispositionFormData("attachment", "donation-receipt-" + id + ".pdf");
+            headers.setCacheControl("must-revalidate, post-check=0, pre-check=0");
+            
+            return new ResponseEntity<>(pdfContent, headers, HttpStatus.OK);
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, 
+                    "Failed to generate receipt: " + e.getMessage());
+        }
     }
 
     // Note: if public anonymity is desired later, reintroduce an anonymized mapper.

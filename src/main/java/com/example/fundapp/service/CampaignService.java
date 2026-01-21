@@ -1,18 +1,27 @@
 package com.example.fundapp.service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.math.BigDecimal;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.fundapp.constants.AppConstants;
+import com.example.fundapp.dto.CampaignDto;
 import com.example.fundapp.dto.CampaignRequest;
 import com.example.fundapp.model.Campaign;
+import com.example.fundapp.model.Donation;
 import com.example.fundapp.model.User;
 import com.example.fundapp.repository.CampaignRepository;
 import com.example.fundapp.repository.DonationRepository;
@@ -73,7 +82,7 @@ public class CampaignService {
 
             // Fallback: Use admin user if no authenticated user found
             if (currentUser == null) {
-                currentUser = userRepository.findByEmail("admin@fundapp.com")
+                currentUser = userRepository.findByEmail(AppConstants.DEFAULT_ADMIN_EMAIL)
                         .orElseThrow(() -> new RuntimeException("Admin user not found for fallback"));
                 // using fallback admin user silently
             }
@@ -134,5 +143,96 @@ public class CampaignService {
 
     public List<Campaign> getAllCampaigns() {
         return campaignRepository.findAll();
+    }
+
+    /**
+     * Get campaigns with filtering, sorting, and pagination
+     */
+    public Page<CampaignDto> getCampaignsWithFilters(
+            Pageable pageable,
+            String search,
+            Boolean active) {
+        
+        List<Campaign> allCampaigns = campaignRepository.findAll();
+        
+        // Apply filters
+        List<Campaign> filtered = allCampaigns.stream()
+                .filter(c -> search == null || search.isBlank()
+                        || c.getTitle().toLowerCase().contains(search.toLowerCase()))
+                .filter(c -> active == null || c.isActive() == active)
+                .toList();
+        
+        // Apply pagination
+        int start = Math.min((int) pageable.getOffset(), filtered.size());
+        int end = Math.min(start + pageable.getPageSize(), filtered.size());
+        
+        List<CampaignDto> campaignDtos = filtered.subList(start, end).stream()
+                .map(this::convertToDto)
+                .toList();
+        
+        return new PageImpl<>(campaignDtos, pageable, filtered.size());
+    }
+    
+    private CampaignDto convertToDto(Campaign c) {
+        return new CampaignDto(
+                c.getId(),
+                c.getTitle(),
+                c.getDescription(),
+                c.isActive(),
+                c.getTargetAmount(),
+                c.getCurrentAmount(),
+                c.getCreatedAt());
+    }
+
+    /**
+     * Get analytics data for a campaign including donation trends
+     */
+    public Map<String, Object> getCampaignAnalytics(String campaignId) {
+        Campaign campaign = campaignRepository.findById(campaignId)
+                .orElseThrow(() -> new RuntimeException("Campaign not found"));
+        
+        var donations = donationRepository.findByCampaign_Id(campaignId);
+        
+        // Calculate statistics
+        long totalDonations = donations.size();
+        BigDecimal totalAmount = donations.stream()
+                .map(d -> d.getAmount())
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        
+        BigDecimal avgDonation = totalDonations > 0 
+                ? totalAmount.divide(BigDecimal.valueOf(totalDonations), 2, java.math.RoundingMode.HALF_UP)
+                : BigDecimal.ZERO;
+        
+        // Group donations by date for chart
+        var donationsByDate = donations.stream()
+                .collect(Collectors.groupingBy(
+                        d -> d.getDonatedAt().toLocalDate(),
+                        Collectors.reducing(BigDecimal.ZERO, 
+                                Donation::getAmount, 
+                                BigDecimal::add)
+                ));
+        
+        // Convert to list of maps for frontend
+        var chartData = donationsByDate.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .map(entry -> Map.of(
+                        "date", entry.getKey().toString(),
+                        "amount", entry.getValue()
+                ))
+                .collect(Collectors.toList());
+        
+        return Map.of(
+                "totalDonations", totalDonations,
+                "totalAmount", totalAmount,
+                "averageDonation", avgDonation,
+                "targetAmount", campaign.getTargetAmount(),
+                "currentAmount", campaign.getCurrentAmount(),
+                "progressPercentage", campaign.getTargetAmount().compareTo(BigDecimal.ZERO) > 0
+                        ? campaign.getCurrentAmount()
+                                .divide(campaign.getTargetAmount(), 4, java.math.RoundingMode.HALF_UP)
+                                .multiply(BigDecimal.valueOf(100))
+                        : BigDecimal.ZERO,
+                "chartData", chartData
+        );
     }
 }

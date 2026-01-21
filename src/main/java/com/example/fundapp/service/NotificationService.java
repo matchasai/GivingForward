@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.example.fundapp.constants.AppConstants;
 import com.example.fundapp.model.Notification;
 import com.example.fundapp.model.User;
 import com.example.fundapp.repository.NotificationRepository;
@@ -21,14 +22,17 @@ public class NotificationService {
     }
 
     public List<Notification> getUserNotifications(User user) {
+        if (user == null) return List.of();
         return notificationRepository.findByUserOrderByCreatedAtDesc(user);
     }
 
     public List<Notification> getUnreadNotifications(User user) {
+        if (user == null) return List.of();
         return notificationRepository.findByUserAndReadOrderByCreatedAtDesc(user, false);
     }
 
     public long getUnreadCount(User user) {
+        if (user == null) return 0L;
         return notificationRepository.countByUserAndRead(user, false);
     }
 
@@ -40,6 +44,7 @@ public class NotificationService {
     }
 
     public void markAllAsRead(User user) {
+        if (user == null) return;
         List<Notification> notifications = notificationRepository.findByUserAndReadOrderByCreatedAtDesc(user, false);
         notifications.forEach(n -> n.setRead(true));
         notificationRepository.saveAll(notifications);
@@ -50,6 +55,7 @@ public class NotificationService {
     }
 
     public void deleteAllUserNotifications(User user) {
+        if (user == null) return;
         notificationRepository.deleteByUser(user);
     }
 
@@ -66,6 +72,6 @@ public class NotificationService {
     }
 
     public void notifyPasswordChanged(User user) {
-        createNotification(user, "Your password has been successfully changed");
+        createNotification(user, AppConstants.MSG_PASSWORD_CHANGED);
     }
 }

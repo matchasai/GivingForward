@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+import com.example.fundapp.constants.AppConstants;
 import com.example.fundapp.model.User;
 import com.example.fundapp.repository.UserRepository;
 
@@ -26,15 +27,15 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         // Create admin user if it doesn't exist
-        if (!userRepository.existsByEmail("admin@fundapp.com")) {
+        if (!userRepository.existsByEmail(AppConstants.DEFAULT_ADMIN_EMAIL)) {
             User admin = new User();
-            admin.setName("Admin User");
-            admin.setEmail("admin@fundapp.com");
-            admin.setPassword(passwordEncoder.encode("admin123"));
+            admin.setName(AppConstants.DEFAULT_ADMIN_NAME);
+            admin.setEmail(AppConstants.DEFAULT_ADMIN_EMAIL);
+            admin.setPassword(passwordEncoder.encode(AppConstants.DEFAULT_ADMIN_PASSWORD));
             admin.setRole(User.Role.ADMIN);
             userRepository.save(admin);
             if (log.isInfoEnabled())
-                log.info("Admin user created: {}", "admin@fundapp.com");
+                log.info("Admin user created: {}", AppConstants.DEFAULT_ADMIN_EMAIL);
         }
     }
 }
