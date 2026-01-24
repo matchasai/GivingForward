@@ -117,7 +117,15 @@ export default function AdminCampaigns() {
   }
 
   const onEdit = (c) => {
-    setForm({ id: c.id, title: c.title, description: c.description, targetAmount: c.targetAmount, imageUrl: c.imageUrl || '' })
+    setForm({
+      id: c.id,
+      title: c.title || '',
+      description: c.description || '',
+      targetAmount: c.targetAmount ?? '',
+      imageUrl: c.imageUrl || '',
+      category: c.category || 'Other',
+      endDate: c.endDate ? c.endDate.slice(0, 10) : '',
+    })
   }
 
   const onDelete = async (id, title) => {

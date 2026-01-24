@@ -13,15 +13,44 @@ const Contact = () => {
   const [submitting, setSubmitting] = useState(false)
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    setSubmitting(true)
-    
-    // Simulate form submission
-    setTimeout(() => {
-      toast.success('Message sent! We\'ll get back to you within 24 hours.')
-      setFormData({ name: '', email: '', subject: '', message: '' })
-      setSubmitting(false)
-    }, 1000)
+    e.preventDefault();
+    setSubmitting(true);
+
+    try {
+      const response = await fetch("https://formspree.io/f/xnnvvabq", {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+        },
+        body: new FormData(e.target),
+      });
+
+      if (response.ok) {
+        toast.success("Message sent successfully!");
+        e.target.reset();
+        setFormData({ name: '', email: '', subject: '', message: '' })
+      } else {
+        let data = null;
+        try {
+          data = await response.json();
+        } catch {
+          // ignore non-JSON responses
+        }
+
+        if (data?.errors?.length) {
+          toast.error(
+            "Form submission error: " + data.errors.map((err) => err.message).join(", ")
+          );
+        } else {
+          toast.error("Something went wrong. Please try again later.");
+        }
+      }
+    } catch (error) {
+      console.error("Error submitting form:", error);
+      toast.error("Failed to send message. Please try again later.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   const handleChange = (e) => {

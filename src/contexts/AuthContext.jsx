@@ -1,5 +1,6 @@
 import axios from "axios";
 import { createContext, useContext, useEffect, useState } from "react";
+import { isJwtExpired } from "../utils/jwt";
 
 const AuthContext = createContext();
 
@@ -40,18 +41,34 @@ export const AuthProvider = ({ children }) => {
   }, [refreshToken]);
 
   useEffect(() => {
+    // Keep axios default Authorization header in sync with current token.
+    // This makes auth more robust across refresh/reload and edge cases where
+    // request interceptors might not run for a given request.
+    if (token && !isJwtExpired(token)) {
+      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+    } else {
+      delete axios.defaults.headers.common["Authorization"];
+    }
+  }, [token]);
+
+  useEffect(() => {
     // Set up axios interceptor to attach token
     const requestInterceptor = axios.interceptors.request.use(
       (config) => {
-        // Do not add Authorization header for login or register
+        // Do not add Authorization header for auth endpoints
         if (
           token &&
           !(
             config.url.endsWith("/api/auth/login") ||
-            config.url.endsWith("/api/auth/register")
+            config.url.endsWith("/api/auth/register") ||
+            config.url.endsWith("/api/auth/refresh")
           )
         ) {
-          config.headers["Authorization"] = `Bearer ${token}`;
+          // Check if token is expired - if so, don't send it
+          // Let backend handle unauthenticated requests gracefully
+          if (!isJwtExpired(token)) {
+            config.headers["Authorization"] = `Bearer ${token}`;
+          }
         }
         return config;
       },
@@ -62,6 +79,13 @@ export const AuthProvider = ({ children }) => {
       axios.interceptors.request.eject(requestInterceptor);
     };
   }, [token]);
+
+  // Listen for global logout events (e.g., refresh token failure)
+  useEffect(() => {
+    const handleLogout = () => logout();
+    window.addEventListener('app:logout', handleLogout);
+    return () => window.removeEventListener('app:logout', handleLogout);
+  }, []);
 
   // Login function: calls API, stores token and user
   const login = async (email, password) => {
@@ -110,6 +134,7 @@ export const AuthProvider = ({ children }) => {
     try {
       axios.post('/api/auth/logout')
     } catch (err) {
+      // ignore
     }
     setUser(null)
     setToken(null)

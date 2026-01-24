@@ -88,7 +88,7 @@ const CampaignDetail = () => {
     if (campaign) {
       fetchSimilarCampaigns()
       // Load updates timeline
-      (async () => {
+      ;(async () => {
         setLoadingUpdates(true)
         try {
           const res = await axios.get(`/api/campaigns/${id}/updates`)
