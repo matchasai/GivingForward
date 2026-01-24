@@ -36,8 +36,6 @@ public class CustomJwtAuthenticationFilter extends OncePerRequestFilter {
             @NonNull HttpServletResponse response,
             @NonNull FilterChain chain) throws ServletException, IOException {
 
-        String requestURI = request.getRequestURI();
-
         // Always allow CORS preflight through without JWT processing.
         // Authorization decisions for preflight are handled by the security config.
         if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
@@ -45,17 +43,14 @@ public class CustomJwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        // Skip JWT processing for most public endpoints
-        if (isPublicEndpoint(requestURI)) {
-            chain.doFilter(request, response);
-            return;
-        }
-
         try {
             String jwt = getJwtFromRequest(request);
-            // avoid verbose debug logs; rely on warnings/errors when applicable
 
-            if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)) {
+            if (!StringUtils.hasText(jwt)) {
+                if (log.isDebugEnabled()) {
+                    log.debug("No JWT provided for {} {}", request.getMethod(), request.getRequestURI());
+                }
+            } else if (tokenProvider.validateToken(jwt)) {
                 String username = tokenProvider.getUsernameFromJWT(jwt);
                 // token valid; proceed
                 UserDetails userDetails = customUserDetailsService.loadUserByUsername(username);
@@ -64,31 +59,24 @@ public class CustomJwtAuthenticationFilter extends OncePerRequestFilter {
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authentication);
                 // authentication set
-            } else if (StringUtils.hasText(jwt)) {
+            } else {
                 // If a token is present but invalid/expired, do NOT short-circuit here.
-                // Let Spring Security authorization decide (permitAll endpoints should still work).
+                // Let Spring Security authorization decide (permitAll endpoints should still
+                // work).
                 SecurityContextHolder.clearContext();
+                if (log.isDebugEnabled()) {
+                    log.debug("JWT invalid/expired for {} {}", request.getMethod(), request.getRequestURI());
+                }
             }
         } catch (Exception e) {
             // swallow exception and continue unauthenticated
             // Intentionally minimal: on failure, continue without authentication
+            if (log.isDebugEnabled()) {
+                log.debug("JWT processing failed for {} {}", request.getMethod(), request.getRequestURI(), e);
+            }
         }
 
         chain.doFilter(request, response);
-    }
-
-    private boolean isPublicEndpoint(String requestURI) {
-        return requestURI.startsWith("/api/auth/") ||
-                requestURI.startsWith("/api/public/") ||
-                requestURI.startsWith("/api/test/") ||
-                requestURI.equals("/api/campaigns/active") ||
-                requestURI.startsWith("/uploads/") ||
-                // Allow anonymous donations via Razorpay endpoints
-                requestURI.equals("/api/payments/create-order") ||
-                requestURI.equals("/api/payments/verify") ||
-                // Allow public access to campaign list/details and donations by campaign
-                requestURI.startsWith("/api/campaigns") ||
-                requestURI.startsWith("/api/donations/campaign/");
     }
 
     private String getJwtFromRequest(HttpServletRequest request) {
